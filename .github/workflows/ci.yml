@@ -1,0 +1,53 @@
+# CI para .NET 9 + Docker + cobertura
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: Y0urs3cretOrA7&
+          MYSQL_DATABASE: usersdb
+          MYSQL_USER: devuser
+          MYSQL_PASSWORD: devpass123
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pY0urs3cretOrA7&" --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      ConnectionStrings__Default: server=127.0.0.1;port=3307;database=usersdb;user=devuser;password=devpass123;TreatTinyAsBoolean=false
+      ASPNETCORE_ENVIRONMENT: Development
+      AUTH_SESSION_TOKEN_MINUTES: 1440
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Restore dependencies
+        run: dotnet restore Users.sln
+      - name: Build
+        run: dotnet build Users.sln --no-restore --configuration Release
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -P3307 -pdevpass123 --silent; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+        shell: bash
+      - name: Run tests with coverage
+        run: dotnet test Users.Tests/Users.Tests.csproj --no-build --configuration Release --collect:"XPlat Code Coverage"
+      - name: Report coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./Users.Tests/TestResults/**/*.cobertura.xml
+          fail_ci_if_error: true

@@ -1,0 +1,121 @@
+@Users_Api_HostAddress = http://localhost:5026
+# @Users_Api_HostAddress = http://localhost:8088
+@json = application/json
+@rand = {{$timestamp}}
+
+# Variables derivadas de respuestas previas (REST Client):
+# Primero ejecuta las siguientes solicitudes nombradas antes de usar estas variables:
+# 1. Ejecuta 'create_user'
+# 2. Ejecuta 'login'
+# 3. Ejecuta 'create_preferences'
+
+@userId = {{create_user.response.body.$.id}}
+@token  = {{login.response.body.$.token}}
+@prefId = {{create_preferences.response.body.$.id}}
+
+###
+# Swagger (ping)
+GET {{Users_Api_HostAddress}}/swagger/v1/swagger.json
+Accept: {{json}}
+
+################################################################################
+# USERS
+################################################################################
+
+### Crear usuario
+# @name create_user
+POST {{Users_Api_HostAddress}}/api/v1/users
+Content-Type: {{json}}
+
+{
+  "nickname": "geo{{rand}}",
+  "name": "Geo",
+  "lastname": "Camacho",
+  "email": "geo{{rand}}@demo.com",
+  "password": "P@ssw0rd!"
+}
+
+### Listar usuarios
+GET {{Users_Api_HostAddress}}/api/v1/users
+Accept: {{json}}
+
+### Obtener usuario por Id
+GET {{Users_Api_HostAddress}}/api/v1/users/{{userId}}
+Accept: {{json}}
+
+### Obtener usuario por email (ajusta si cambiaste el email)
+GET {{Users_Api_HostAddress}}/api/v1/users/by-email?email=geo{{rand}}@demo.com
+Accept: {{json}}
+
+### Actualizar parcialmente usuario
+PATCH {{Users_Api_HostAddress}}/api/v1/users/{{userId}}
+Content-Type: {{json}}
+
+{
+  "nickname": "geo_updated_{{rand}}",
+  "role": "admin",
+  "status": "active",
+  "emailConfirmed": true
+}
+
+################################################################################
+# AUTH
+################################################################################
+
+### Login (retorna token opaco y expiración)
+# @name login
+POST {{Users_Api_HostAddress}}/api/v1/auth/login
+Content-Type: {{json}}
+
+{
+  "email": "geo{{rand}}@demo.com",
+  "password": "P@ssw0rd!"
+}
+
+### Resetear contraseña (demo)
+POST {{Users_Api_HostAddress}}/api/v1/auth/reset-password
+Content-Type: {{json}}
+
+{
+  "email": "geo{{rand}}@demo.com",
+  "newPassword": "Nuev0P@ss!"
+}
+
+### Confirmar email (demo)
+POST {{Users_Api_HostAddress}}/api/v1/auth/confirm-email/{{userId}}
+
+################################################################################
+# PREFERENCES
+################################################################################
+
+### Crear preferencias
+# @name create_preferences
+POST {{Users_Api_HostAddress}}/api/v1/preferences
+Content-Type: {{json}}
+
+{
+  "userId": {{userId}},
+  "wcagVersion": "2.2",
+  "wcagLevel": "AA",
+  "language": "es",
+  "visualTheme": "light",
+  "reportFormat": "pdf",
+  "notificationsEnabled": true,
+  "aiResponseLevel": "intermediate",
+  "fontSize": 14
+}
+
+### Obtener preferencias por userId
+GET {{Users_Api_HostAddress}}/api/v1/preferences/by-user/{{userId}}
+Accept: {{json}}
+
+### Actualizar parcialmente preferencias
+PATCH {{Users_Api_HostAddress}}/api/v1/preferences/{{prefId}}
+Content-Type: {{json}}
+
+{
+  "visualTheme": "dark",
+  "language": "en",
+  "reportFormat": "json",
+  "fontSize": 16
+}

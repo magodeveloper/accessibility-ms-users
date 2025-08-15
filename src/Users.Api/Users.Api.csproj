@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="FluentValidation.AspNetCore" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.OpenApi" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Users.Domain\Users.Domain.csproj" />
+    <ProjectReference Include="..\Users.Application\Users.Application.csproj" />
+    <ProjectReference Include="..\Users.Infrastructure\Users.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
