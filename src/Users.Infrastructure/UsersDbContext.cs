@@ -17,7 +17,7 @@ public sealed class UsersDbContext : DbContext
         // USERS
         b.Entity<User>(e =>
         {
-            e.ToTable("USERS");
+            e.ToTable("users");
             e.HasKey(x => x.Id);
             e.Property(x => x.Nickname).HasColumnName("nickname").HasMaxLength(15).IsRequired();
             e.Property(x => x.Name).HasColumnName("name").HasMaxLength(30).IsRequired();

@@ -3,6 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 COPY Users.sln ./
+COPY Directory.Packages.props ./
 COPY src/Users.Api/Users.Api.csproj                      src/Users.Api/
 COPY src/Users.Application/Users.Application.csproj      src/Users.Application/
 COPY src/Users.Domain/Users.Domain.csproj                src/Users.Domain/
@@ -17,6 +18,6 @@ RUN dotnet publish ./src/Users.Api/Users.Api.csproj -c Release -o /app/publish
 # ============ STAGE 2: runtime ============
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
-EXPOSE 8080
+EXPOSE 8081
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "Users.Api.dll", "--urls", "http://0.0.0.0:8080"]
+ENTRYPOINT ["dotnet", "Users.Api.dll", "--urls", "http://0.0.0.0:8081"]

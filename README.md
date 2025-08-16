@@ -36,12 +36,14 @@ Configura los archivos `.env.development` y `.env.production` para tus entornos.
 
 ```env
 ASPNETCORE_ENVIRONMENT=Development
+ASPNETCORE_URLS=http://+:8081
 DB_NAME=msusers
 DB_USER=msusers
 DB_PASSWORD=msusers123
-DB_PORT=3306
-API_HOST_PORT=8080
+API_HOST_PORT=8081
 ```
+
+> **Nota:** No es necesario definir `DB_HOST` ni `DB_PORT` en los archivos `.env`, ya que la comunicación interna entre contenedores Docker utiliza el nombre del servicio (`mysql`) y el puerto por defecto (`3306`). La cadena de conexión ya está configurada correctamente en `docker-compose.yml`.
 
 ## Uso con Docker Compose
 

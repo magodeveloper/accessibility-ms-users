@@ -36,6 +36,13 @@ var tokenMinutes = builder.Configuration.GetValue<int?>("Auth:SessionTokenMinute
 
 var app = builder.Build();
 
+// Migración automática de la base de datos al iniciar la API
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
+    db.Database.Migrate();
+}
+
 // Middleware global para manejo de errores uniformes
 app.UseExceptionHandler(errorApp =>
 {
