@@ -9,7 +9,7 @@ COPY src/Users.Domain/Users.Domain.csproj                src/Users.Domain/
 COPY src/Users.Infrastructure/Users.Infrastructure.csproj src/Users.Infrastructure/
 COPY src/Users.Tests/Users.Tests.csproj                  src/Users.Tests/
 
-RUN dotnet restore ms-users.sln
+RUN dotnet restore Users.sln
 
 COPY . .
 RUN dotnet publish ./src/Users.Api/Users.Api.csproj -c Release -o /app/publish

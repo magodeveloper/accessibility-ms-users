@@ -307,7 +307,45 @@ if (app.Environment.IsDevelopment())
         return Results.Ok(new { message = Get("Success_UserDeleted", lang) });
     }).WithTags(UsersTag).WithSummary("Eliminar usuario por email");
 
-    // AUTH (login, reset/restore, confirm email)
+    // AUTH (login, logout, reset/restore, confirm email)
+    // LOGOUT: elimina todas las sesiones del usuario y pone last_login en null
+    api.MapPost("/auth/logout", async (UsersDbContext db, LogoutDto dto, HttpContext context) =>
+    {
+        var lang = GetLang(context);
+        var u = await db.Users.FirstOrDefaultAsync(x => x.Email == dto.Email);
+        if (u is null) return Results.NotFound(Get(ErrorUserNotFound, lang));
+
+        // Eliminar todas las sesiones del usuario
+        var sessions = db.Sessions.Where(s => s.UserId == u.Id);
+        db.Sessions.RemoveRange(sessions);
+
+        // Poner last_login en null
+        u.LastLogin = null;
+        await db.SaveChangesAsync();
+        return Results.Ok(new { message = Get("Success_Logout", lang) });
+    })
+        .WithTags("Auth")
+        .WithSummary("Cerrar sesión (logout global)")
+        .WithDescription("Elimina todas las sesiones del usuario y pone last_login en null. Requiere email en el body.")
+        .Produces(200, typeof(object), JsonContentType)
+        .Produces(404, typeof(string), JsonContentType)
+        .WithOpenApi(op =>
+        {
+            op.RequestBody = new Microsoft.OpenApi.Models.OpenApiRequestBody
+            {
+                Description = "Email del usuario a desloguear",
+                Content = {
+                [JsonContentType] = new Microsoft.OpenApi.Models.OpenApiMediaType {
+                    Example = new OpenApiObject {
+                        ["email"] = new OpenApiString("juan@email.com")
+                    }
+                }
+                }
+            };
+            op.Responses["200"].Description = "Logout exitoso";
+            op.Responses["404"] = new Microsoft.OpenApi.Models.OpenApiResponse { Description = "Usuario no encontrado" };
+            return op;
+        });
     api.MapPost("/auth/login", async (UsersDbContext db, IPasswordService pwd, ISessionTokenService tok, LoginDto dto, HttpContext context) =>
 
     {

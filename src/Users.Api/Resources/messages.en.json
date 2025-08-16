@@ -24,4 +24,5 @@
   "Success_PreferencesUpdated": "Preferences updated successfully.",
   "Success_PreferencesAndUserUpdated": "Preferences and user updated successfully.",
   "Success_UserAndPreferencesCreated": "User and preferences created successfully.",
+  "Success_Logout": "Logout successful. All sessions have been deleted and last login has been reset."
 }

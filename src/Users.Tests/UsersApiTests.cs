@@ -17,6 +17,53 @@ namespace Users.Tests
         }
 
         [Fact]
+        public async Task Logout_EliminaSesionesYActualizaLastLogin()
+        {
+            var client = _factory.CreateClient();
+            var email = "logout@email.com";
+            var password = "LogoutTest123!";
+            var dto = new { nickname = "logoutuser", name = "Logout", lastname = "User", email, password };
+            // Eliminar usuario si existe
+            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
+            // Crear usuario
+            var createResp = await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
+            Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
+
+            // Login para crear sesión
+            var loginDto = new { email, password };
+            var loginResp = await client.PostAsJsonAsync("/api/v1/auth/login", loginDto);
+            Assert.Equal(HttpStatusCode.OK, loginResp.StatusCode);
+            var loginData = await loginResp.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.True(loginData.TryGetProperty("token", out var tokenProp));
+            Assert.False(string.IsNullOrWhiteSpace(tokenProp.GetString()));
+
+            // Logout
+            var logoutDto = new { email };
+            var logoutResp = await client.PostAsJsonAsync("/api/v1/auth/logout", logoutDto);
+            Assert.Equal(HttpStatusCode.OK, logoutResp.StatusCode);
+
+            // Intentar login nuevamente (debe permitir, pero last_login debe ser null antes del login)
+            // Consultar usuario para verificar last_login null
+
+            var getUserResp = await client.GetAsync($"/api/v1/users/by-email?email={email}");
+            if (getUserResp.StatusCode == HttpStatusCode.OK)
+            {
+                var userData = await getUserResp.Content.ReadFromJsonAsync<JsonElement>();
+                if (userData.TryGetProperty("user", out var user) && user.TryGetProperty("lastLogin", out var lastLoginProp))
+                {
+                    Assert.True(lastLoginProp.ValueKind == JsonValueKind.Null || string.IsNullOrWhiteSpace(lastLoginProp.GetString()));
+                }
+            }
+
+            // Login nuevamente para restaurar last_login
+            var reloginResp = await client.PostAsJsonAsync("/api/v1/auth/login", loginDto);
+            Assert.Equal(HttpStatusCode.OK, reloginResp.StatusCode);
+            var reloginData = await reloginResp.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.True(reloginData.TryGetProperty("token", out var reloginTokenProp));
+            Assert.False(string.IsNullOrWhiteSpace(reloginTokenProp.GetString()));
+        }
+
+        [Fact]
         public async Task LoginUsuarioRecienCreado_DevuelveTokenCorrecto()
         {
             var client = _factory.CreateClient();
@@ -56,7 +103,7 @@ namespace Users.Tests
         public async Task PatchUsuarioYPreferenciasPorEmail_ActualizaCorrectamente()
         {
             var client = _factory.CreateClient();
-            var email = "pruebas@email.com";
+            var email = "patch@email.com";
             // Eliminar usuario si existe
             await client.DeleteAsync($"/api/v1/users/by-email/{email}");
             var dto = new { nickname = "patchuser", name = "Patch", lastname = "User", email, password = "Test1234!" };
@@ -79,7 +126,7 @@ namespace Users.Tests
                 role = "admin",
                 status = "inactive",
                 emailConfirmed = true,
-                email = "pruebas@email.com",
+                email = "patch2@email.com",
                 password = "NewPass123!"
             };
             var resp = await client.PatchAsJsonAsync("/api/v1/preferences/by-user/patch@email.com", patch);
@@ -97,7 +144,7 @@ namespace Users.Tests
             Assert.Equal("detailed", prefs.GetProperty("aiResponseLevel").GetString());
             Assert.Equal(20, prefs.GetProperty("fontSize").GetInt32());
             Assert.False(prefs.GetProperty("notificationsEnabled").GetBoolean());
-            Assert.Equal("pruebas@email.com", prefs.GetProperty("user").GetProperty("email").GetString());
+            Assert.Equal("patch2@email.com", prefs.GetProperty("user").GetProperty("email").GetString());
             Assert.Equal("Patched", prefs.GetProperty("user").GetProperty("name").GetString());
             Assert.Equal("User2", prefs.GetProperty("user").GetProperty("lastname").GetString());
             Assert.Equal("admin", prefs.GetProperty("user").GetProperty("role").GetString());

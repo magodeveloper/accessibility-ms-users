@@ -53,6 +53,57 @@ docker compose --env-file .env.development up --build
 docker compose --env-file .env.production up --build
 ```
 
+## Dockerización y despliegue
+
+Este proyecto está preparado para ejecutarse fácilmente en contenedores Docker, tanto en desarrollo como en producción.
+
+- **Dockerfile**: Define cómo construir la imagen de la API (compilación, dependencias, puertos expuestos).
+- **docker-compose.yml**: Orquesta los servicios (API y MySQL), define variables de entorno, mapea puertos y gestiona dependencias.
+- **.env.development / .env.production**: Archivos de variables de entorno para cada ambiente. Se referencian automáticamente en docker-compose.
+
+### Flujo recomendado
+
+1. Ajusta las variables en `.env.development` o `.env.production` según el entorno.
+2. Ejecuta:
+   ```sh
+   docker compose --env-file .env.development up --build
+   # o para producción
+   docker compose --env-file .env.production up --build
+   ```
+3. Accede a la API en el puerto definido por `API_HOST_PORT` (por defecto 8080).
+
+### Personalización del nombre de la imagen
+
+Puedes personalizar el nombre de la imagen agregando la propiedad `image:` en el servicio `api` de tu `docker-compose.yml`:
+
+```yaml
+api:
+  image: msusers-api:latest
+  build:
+    context: .
+    dockerfile: ./Dockerfile
+  # ...
+```
+
+Esto generará la imagen con ese nombre y etiqueta.
+
+### Comandos útiles
+
+- Parar y eliminar contenedores y volúmenes:
+  ```sh
+  docker compose down -v
+  ```
+- Ver logs de la API:
+  ```sh
+  docker compose logs -f api
+  ```
+- Limpiar imágenes sin usar:
+  ```sh
+  docker image prune
+  ```
+
+---
+
 ## Endpoints principales
 
 - `POST   /api/v1/users-with-preferences`  

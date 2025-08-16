@@ -19,6 +19,7 @@ services:
       retries: 10
 
   api:
+    image: msusers-api:latest
     build:
       context: .
       dockerfile: ./Dockerfile

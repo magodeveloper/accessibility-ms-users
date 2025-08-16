@@ -1,5 +1,11 @@
 namespace Users.Application;
 
+// DTO para logout
+public sealed class LogoutDto
+{
+    public string Email { get; set; } = string.Empty;
+}
+
 public record UserCreateDto(string Nickname, string Name, string Lastname, string Email, string Password);
 public record UserReadDto(int Id, string Nickname, string Name, string Lastname, string Email, string Role, string Status, bool EmailConfirmed, DateTime? LastLogin, DateTime RegistrationDate, DateTime CreatedAt, DateTime UpdatedAt);
 public record UserPatchDto(string? Nickname, string? Name, string? Lastname, string? Role, string? Status, bool? EmailConfirmed, string? Email, string? Password);
@@ -32,3 +38,4 @@ public record PreferenceUserPatchDto(
     string? Email,
     string? Password
 );
+
