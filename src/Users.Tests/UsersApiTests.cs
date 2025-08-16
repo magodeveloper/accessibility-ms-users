@@ -1,4 +1,3 @@
-
 using Xunit;
 using Users.Api;
 using System.Net;
@@ -18,6 +17,29 @@ namespace Users.Tests
         }
 
         [Fact]
+        public async Task LoginUsuarioRecienCreado_DevuelveTokenCorrecto()
+        {
+            var client = _factory.CreateClient();
+            var email = "pruebas@email.com";
+            var password = "TestLogin123!";
+            var dto = new { nickname = "pruebas", name = "Login", lastname = "User", email, password };
+            // Eliminar usuario si existe
+            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
+            // Crear usuario
+            var createResp = await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
+            Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
+
+            // Login
+            var loginDto = new { email, password };
+            var loginResp = await client.PostAsJsonAsync("/api/v1/auth/login", loginDto);
+            Assert.Equal(HttpStatusCode.OK, loginResp.StatusCode);
+            var data = await loginResp.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.True(data.TryGetProperty("token", out var tokenProp));
+            Assert.False(string.IsNullOrWhiteSpace(tokenProp.GetString()));
+            Assert.True(data.TryGetProperty("expiresAt", out _));
+        }
+
+        [Fact]
         public async Task ObtenerPreferenciasPorEmail_DevuelvePreferenciasCorrectas()
         {
             var client = _factory.CreateClient();
@@ -34,8 +56,13 @@ namespace Users.Tests
         public async Task PatchUsuarioYPreferenciasPorEmail_ActualizaCorrectamente()
         {
             var client = _factory.CreateClient();
-            var dto = new { nickname = "patchuser", name = "Patch", lastname = "User", email = "patch@email.com", password = "Test1234!" };
+            var email = "pruebas@email.com";
+            // Eliminar usuario si existe
+            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
+            var dto = new { nickname = "patchuser", name = "Patch", lastname = "User", email, password = "Test1234!" };
             await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
+            // Eliminar usuario destino si existe
+            await client.DeleteAsync($"/api/v1/users/by-email/patch2@email.com");
             var patch = new
             {
                 wcagVersion = "2.2",
@@ -52,7 +79,7 @@ namespace Users.Tests
                 role = "admin",
                 status = "inactive",
                 emailConfirmed = true,
-                email = "patch2@email.com",
+                email = "pruebas@email.com",
                 password = "NewPass123!"
             };
             var resp = await client.PatchAsJsonAsync("/api/v1/preferences/by-user/patch@email.com", patch);
@@ -70,7 +97,7 @@ namespace Users.Tests
             Assert.Equal("detailed", prefs.GetProperty("aiResponseLevel").GetString());
             Assert.Equal(20, prefs.GetProperty("fontSize").GetInt32());
             Assert.False(prefs.GetProperty("notificationsEnabled").GetBoolean());
-            Assert.Equal("patch2@email.com", prefs.GetProperty("user").GetProperty("email").GetString());
+            Assert.Equal("pruebas@email.com", prefs.GetProperty("user").GetProperty("email").GetString());
             Assert.Equal("Patched", prefs.GetProperty("user").GetProperty("name").GetString());
             Assert.Equal("User2", prefs.GetProperty("user").GetProperty("lastname").GetString());
             Assert.Equal("admin", prefs.GetProperty("user").GetProperty("role").GetString());
