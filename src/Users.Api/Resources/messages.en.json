@@ -8,6 +8,7 @@
   "Error_SessionNotFound": "Session not found.",
   "Error_PreferencesExist": "Preferences already exist for this user.",
   "Error_PreferencesNotFound": "Preferences not found.",
+  "Error_InternalServer": "An unexpected internal error has occurred.",
   "Success_UserCreated": "User created successfully.",
   "Success_UserFound": "User found.",
   "Success_UserUpdated": "User updated successfully.",
@@ -22,5 +23,5 @@
   "Success_PreferencesFound": "Preferences found.",
   "Success_PreferencesUpdated": "Preferences updated successfully.",
   "Success_PreferencesAndUserUpdated": "Preferences and user updated successfully.",
-  "Error_InternalServer": "An unexpected internal error has occurred."
+  "Success_UserAndPreferencesCreated": "User and preferences created successfully.",
 }
