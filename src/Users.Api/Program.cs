@@ -342,7 +342,7 @@ api.MapPost("/preferences", async (UsersDbContext db, PreferenceCreateDto dto, H
 api.MapGet("/preferences/by-user/{userId:int}", async (UsersDbContext db, int userId, HttpContext context) =>
 {
     var lang = GetLang(context);
-    var p = await db.Preferences.FirstOrDefaultAsync(x => x.UserId == userId);
+    var p = await db.Preferences.Include(p => p.User).FirstOrDefaultAsync(x => x.UserId == userId);
     if (p is null)
         return Results.NotFound(Get("Error_PreferencesNotFound", lang));
 
@@ -374,7 +374,21 @@ api.MapGet("/preferences/by-user/{userId:int}", async (UsersDbContext db, int us
         p.FontSize,
         p.CreatedAt,
         p.UpdatedAt,
-        p.User
+        user = p.User == null ? null : new
+        {
+            p.User.Id,
+            p.User.Nickname,
+            p.User.Name,
+            p.User.Lastname,
+            p.User.Email,
+            Role = p.User.Role.ToString(),
+            Status = p.User.Status.ToString(),
+            p.User.EmailConfirmed,
+            p.User.LastLogin,
+            p.User.RegistrationDate,
+            p.User.CreatedAt,
+            p.User.UpdatedAt
+        }
     };
     return Results.Ok(new { preferences, message = Get("Success_PreferencesFound", lang) });
 }).WithTags("Preferences").WithSummary("Obtener preferencias por UserId");
