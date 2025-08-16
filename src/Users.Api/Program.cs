@@ -340,10 +340,13 @@ api.MapPost("/preferences", async (UsersDbContext db, PreferenceCreateDto dto, H
     return Results.Created($"/api/v1/preferences/{p.Id}", new { p.Id, message = Get("Success_PreferencesCreated", lang) });
 }).WithTags("Preferences").WithSummary("Crear preferencias");
 
-api.MapGet("/preferences/by-user/{userId:int}", async (UsersDbContext db, int userId, HttpContext context) =>
+api.MapGet("/preferences/by-user/{email}", async (UsersDbContext db, string email, HttpContext context) =>
 {
     var lang = GetLang(context);
-    var p = await db.Preferences.Include(p => p.User).FirstOrDefaultAsync(x => x.UserId == userId);
+    var u = await db.Users.FirstOrDefaultAsync(x => x.Email == email);
+    if (u is null)
+        return Results.NotFound(Get("Error_UserNotFound", lang));
+    var p = await db.Preferences.Include(p => p.User).FirstOrDefaultAsync(x => x.UserId == u.Id);
     if (p is null)
         return Results.NotFound(Get("Error_PreferencesNotFound", lang));
 
@@ -392,16 +395,18 @@ api.MapGet("/preferences/by-user/{userId:int}", async (UsersDbContext db, int us
         }
     };
     return Results.Ok(new { preferences, message = Get("Success_PreferencesFound", lang) });
-}).WithTags("Preferences").WithSummary("Obtener preferencias por UserId");
+}).WithTags("Preferences").WithSummary("Obtener preferencias por email de usuario");
 
 
-api.MapPatch("/preferences/{id:int}/user/{email}", async (UsersDbContext db, int id, string email, PreferenceUserPatchDto dto, HttpContext context) =>
+api.MapPatch("/preferences/by-user/{email}", async (UsersDbContext db, string email, PreferenceUserPatchDto dto, HttpContext context) =>
 {
     var lang = GetLang(context);
-    var p = await db.Preferences.FindAsync(id);
-    if (p is null) return Results.NotFound(Get("Error_PreferencesNotFound", lang));
     var u = await db.Users.FirstOrDefaultAsync(x => x.Email == email);
     if (u is null) return Results.NotFound(Get("Error_UserNotFound", lang));
+
+    // Solo debe existir un registro de preferencias por usuario
+    var p = await db.Preferences.FirstOrDefaultAsync(x => x.UserId == u.Id);
+    if (p is null) return Results.NotFound(Get("Error_PreferencesNotFound", lang));
 
     // Actualizar preferencias
     if (!string.IsNullOrEmpty(dto.WcagVersion))
@@ -437,7 +442,7 @@ api.MapPatch("/preferences/{id:int}/user/{email}", async (UsersDbContext db, int
     u.UpdatedAt = DateTime.UtcNow;
     await db.SaveChangesAsync();
     return Results.Ok(new { message = Get("Success_PreferencesAndUserUpdated", lang) });
-}).WithTags("Preferences").WithSummary("Actualizar preferencias y usuario en una sola llamada");
+}).WithTags("Preferences").WithSummary("Actualizar preferencias y usuario en una sola llamada por email");
 
 await app.RunAsync();
 
