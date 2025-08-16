@@ -42,9 +42,10 @@ app.UseExceptionHandler(errorApp =>
     errorApp.Run(async context =>
     {
         context.Response.ContentType = "application/json";
-        var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
-        var error = exceptionHandlerPathFeature?.Error;
-        var result = JsonSerializer.Serialize(new { error = error?.Message });
+        // Detectar idioma desde el header Accept-Language o default 'es'
+        var lang = context.Request.Headers["Accept-Language"].FirstOrDefault()?.Split(',')[0] ?? "es";
+        string Get(string key, string lang) => Users.Api.Localization.Get(key, lang); // Usa tu helper de localización
+        var result = JsonSerializer.Serialize(new { error = Get("Error_InternalServer", lang) });
         context.Response.StatusCode = 500;
         await context.Response.WriteAsync(result);
     });
@@ -393,12 +394,16 @@ api.MapGet("/preferences/by-user/{userId:int}", async (UsersDbContext db, int us
     return Results.Ok(new { preferences, message = Get("Success_PreferencesFound", lang) });
 }).WithTags("Preferences").WithSummary("Obtener preferencias por UserId");
 
-api.MapPatch("/preferences/{id:int}", async (UsersDbContext db, int id, PreferencePatchDto dto, HttpContext context) =>
+
+api.MapPatch("/preferences/{id:int}/user/{email}", async (UsersDbContext db, int id, string email, PreferenceUserPatchDto dto, HttpContext context) =>
 {
     var lang = GetLang(context);
     var p = await db.Preferences.FindAsync(id);
     if (p is null) return Results.NotFound(Get("Error_PreferencesNotFound", lang));
+    var u = await db.Users.FirstOrDefaultAsync(x => x.Email == email);
+    if (u is null) return Results.NotFound(Get("Error_UserNotFound", lang));
 
+    // Actualizar preferencias
     if (!string.IsNullOrEmpty(dto.WcagVersion))
         p.WcagVersion = dto.WcagVersion switch { "2.0" => WcagVersion._2_0, "2.1" => WcagVersion._2_1, _ => WcagVersion._2_2 };
     if (!string.IsNullOrEmpty(dto.WcagLevel) && Enum.TryParse<WcagLevel>(dto.WcagLevel, out var lvl)) p.WcagLevel = lvl;
@@ -409,12 +414,32 @@ api.MapPatch("/preferences/{id:int}", async (UsersDbContext db, int id, Preferen
     if (!string.IsNullOrEmpty(dto.AiResponseLevel) && Enum.TryParse<AiResponseLevel>(dto.AiResponseLevel, out var ai)) p.AiResponseLevel = ai;
     if (dto.FontSize.HasValue) p.FontSize = dto.FontSize.Value;
 
-    p.UpdatedAt = DateTime.UtcNow;
-    await db.SaveChangesAsync();
-    return Results.Ok(new { message = Get("Success_PreferencesUpdated", lang) });
-}).WithTags("Preferences").WithSummary("Actualizar parcialmente preferencias");
+    // Actualizar usuario
+    if (!string.IsNullOrEmpty(dto.Email) && dto.Email != u.Email)
+    {
+        var exists = await db.Users.AnyAsync(x => x.Email == dto.Email && x.Id != u.Id);
+        if (exists) return Results.Conflict(Get("Error_EmailExists", lang));
+        u.Email = dto.Email;
+    }
+    if (dto.Password is not null)
+    {
+        var pwd = context.RequestServices.GetRequiredService<IPasswordService>();
+        u.Password = pwd.Hash(dto.Password);
+    }
+    if (dto.Nickname is not null) u.Nickname = dto.Nickname;
+    if (dto.Name is not null) u.Name = dto.Name;
+    if (dto.Lastname is not null) u.Lastname = dto.Lastname;
+    if (dto.Role is not null && Enum.TryParse<UserRole>(dto.Role, out var r)) u.Role = r;
+    if (dto.Status is not null && Enum.TryParse<UserStatus>(dto.Status, out var s)) u.Status = s;
+    if (dto.EmailConfirmed.HasValue) u.EmailConfirmed = dto.EmailConfirmed.Value;
 
-app.Run();
+    p.UpdatedAt = DateTime.UtcNow;
+    u.UpdatedAt = DateTime.UtcNow;
+    await db.SaveChangesAsync();
+    return Results.Ok(new { message = Get("Success_PreferencesAndUserUpdated", lang) });
+}).WithTags("Preferences").WithSummary("Actualizar preferencias y usuario en una sola llamada");
+
+await app.RunAsync();
 
 // Necesario para tests de integración (WebApplicationFactory)
-public partial class Program { }
+public partial class Program { protected Program() { } }

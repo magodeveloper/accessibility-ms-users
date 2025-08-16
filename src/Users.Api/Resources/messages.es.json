@@ -20,5 +20,7 @@
   "Success_SessionDeleted": "Sesión eliminada exitosamente.",
   "Success_PreferencesCreated": "Preferencias creadas exitosamente.",
   "Success_PreferencesFound": "Preferencias encontradas.",
-  "Success_PreferencesUpdated": "Preferencias actualizadas exitosamente."
+  "Success_PreferencesUpdated": "Preferencias actualizadas exitosamente.",
+  "Success_PreferencesAndUserUpdated": "Preferencias y usuario actualizados exitosamente.",
+  "Error_InternalServer": "Ha ocurrido un error interno inesperado."
 }

@@ -12,3 +12,23 @@ public record ResetPasswordDto(string Email, string NewPassword); // simple (sin
 
 public record PreferenceCreateDto(int UserId, string WcagVersion, string WcagLevel, string? Language, string? VisualTheme, string? ReportFormat, bool? NotificationsEnabled, string? AiResponseLevel, int? FontSize);
 public record PreferencePatchDto(string? WcagVersion, string? WcagLevel, string? Language, string? VisualTheme, string? ReportFormat, bool? NotificationsEnabled, string? AiResponseLevel, int? FontSize);
+
+public record PreferenceUserPatchDto(
+    string? WcagVersion,
+    string? WcagLevel,
+    string? Language,
+    string? VisualTheme,
+    string? ReportFormat,
+    bool? NotificationsEnabled,
+    string? AiResponseLevel,
+    int? FontSize,
+    // Campos de usuario
+    string? Nickname,
+    string? Name,
+    string? Lastname,
+    string? Role,
+    string? Status,
+    bool? EmailConfirmed,
+    string? Email,
+    string? Password
+);
