@@ -1,4 +1,7 @@
+
 using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +16,6 @@ using Users.Infrastructure;
 using Users.Application;
 using Users.Domain;
 using static Users.Api.Localization;
-// (usings duplicados eliminados)
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,9 +60,11 @@ if (app.Environment.IsDevelopment())
 var api = app.MapGroup("/api/v1");
 
 
+
 // Tag constants
 const string UsersTag = "Users";
 const string JsonContentType = "application/json";
+const string ErrorUserNotFound = "Error_UserNotFound";
 
 // Helper para obtener el idioma desde el header Accept-Language
 string GetLang(HttpContext context)
@@ -146,7 +150,7 @@ api.MapGet("/users/{id:int}", async (UsersDbContext db, int id, HttpContext cont
     var lang = GetLang(context);
     var u = await db.Users.FindAsync(id);
     return u is null
-    ? Results.NotFound(Get("Error_UserNotFound", lang))
+    ? Results.NotFound(Get(ErrorUserNotFound, lang))
     : Results.Ok(new { user = new UserReadDto(u.Id, u.Nickname, u.Name, u.Lastname, u.Email, u.Role.ToString(), u.Status.ToString(), u.EmailConfirmed, u.LastLogin, u.RegistrationDate, u.CreatedAt, u.UpdatedAt), message = Get("Success_UserFound", lang) });
 })
     .WithTags(UsersTag)
@@ -166,16 +170,29 @@ api.MapGet("/users/by-email", async (UsersDbContext db, string email, HttpContex
     var lang = GetLang(context);
     var u = await db.Users.FirstOrDefaultAsync(x => x.Email == email);
     return u is null
-    ? Results.NotFound(Get("Error_UserNotFound", lang))
+    ? Results.NotFound(Get(ErrorUserNotFound, lang))
     : Results.Ok(new { u.Id, u.Email, u.Nickname, u.Name, u.Lastname, Role = u.Role.ToString(), Status = u.Status.ToString(), u.EmailConfirmed, message = Get("Success_UserFound", lang) });
 }).WithTags(UsersTag).WithSummary("Obtener usuario por email");
 
-api.MapPatch("/users/{id:int}", async (UsersDbContext db, int id, UserPatchDto dto, HttpContext context) =>
+api.MapPatch("/users/by-email/{email}", async (UsersDbContext db, string email, UserPatchDto dto, HttpContext context) =>
 {
     var lang = GetLang(context);
-    var u = await db.Users.FindAsync(id);
-    if (u is null) return Results.NotFound(Get("Error_UserNotFound", lang));
+    var u = await db.Users.FirstOrDefaultAsync(x => x.Email == email);
+    if (u is null) return Results.NotFound(Get(ErrorUserNotFound, lang));
 
+    // Validar email único si se quiere actualizar
+    if (!string.IsNullOrEmpty(dto.Email) && dto.Email != u.Email)
+    {
+        var exists = await db.Users.AnyAsync(x => x.Email == dto.Email && x.Id != u.Id);
+        if (exists) return Results.Conflict(Get("Error_EmailExists", lang));
+        u.Email = dto.Email;
+    }
+
+    if (dto.Password is not null)
+    {
+        var pwd = context.RequestServices.GetRequiredService<IPasswordService>();
+        u.Password = pwd.Hash(dto.Password);
+    }
     if (dto.Nickname is not null) u.Nickname = dto.Nickname;
     if (dto.Name is not null) u.Name = dto.Name;
     if (dto.Lastname is not null) u.Lastname = dto.Lastname;
@@ -186,17 +203,17 @@ api.MapPatch("/users/{id:int}", async (UsersDbContext db, int id, UserPatchDto d
     u.UpdatedAt = DateTime.UtcNow;
     await db.SaveChangesAsync();
     return Results.Ok(new { message = Get("Success_UserUpdated", lang) });
-}).WithTags(UsersTag).WithSummary("Actualizar parcialmente usuario");
+}).WithTags(UsersTag).WithSummary("Actualizar parcialmente usuario por email");
 
-api.MapDelete("/users/{id:int}", async (UsersDbContext db, int id, HttpContext context) =>
+api.MapDelete("/users/by-email/{email}", async (UsersDbContext db, string email, HttpContext context) =>
 {
     var lang = GetLang(context);
-    var u = await db.Users.FindAsync(id);
-    if (u is null) return Results.NotFound(Get("Error_UserNotFound", lang));
+    var u = await db.Users.FirstOrDefaultAsync(x => x.Email == email);
+    if (u is null) return Results.NotFound(Get(ErrorUserNotFound, lang));
     db.Users.Remove(u);
     await db.SaveChangesAsync();
     return Results.Ok(new { message = Get("Success_UserDeleted", lang) });
-}).WithTags(UsersTag).WithSummary("Eliminar usuario");
+}).WithTags(UsersTag).WithSummary("Eliminar usuario por email");
 
 // AUTH (login, reset/restore, confirm email)
 api.MapPost("/auth/login", async (UsersDbContext db, IPasswordService pwd, ISessionTokenService tok, LoginDto dto, HttpContext context) =>
@@ -326,7 +343,40 @@ api.MapGet("/preferences/by-user/{userId:int}", async (UsersDbContext db, int us
 {
     var lang = GetLang(context);
     var p = await db.Preferences.FirstOrDefaultAsync(x => x.UserId == userId);
-    return p is null ? Results.NotFound(Get("Error_PreferencesNotFound", lang)) : Results.Ok(new { preferences = p, message = Get("Success_PreferencesFound", lang) });
+    if (p is null)
+        return Results.NotFound(Get("Error_PreferencesNotFound", lang));
+
+    string WcagVersionToString(WcagVersion v) => v switch
+    {
+        WcagVersion._2_0 => "2.0",
+        WcagVersion._2_1 => "2.1",
+        WcagVersion._2_2 => "2.2",
+        _ => v.ToString()
+    };
+    string AiResponseLevelToString(AiResponseLevel a) => a switch
+    {
+        AiResponseLevel.basic => "basic",
+        AiResponseLevel.intermediate => "intermediate",
+        AiResponseLevel.detailed => "detailed",
+        _ => a.ToString()
+    };
+    var preferences = new
+    {
+        p.Id,
+        p.UserId,
+        wcagVersion = WcagVersionToString(p.WcagVersion),
+        wcagLevel = p.WcagLevel.ToString(),
+        language = p.Language.ToString(),
+        visualTheme = p.VisualTheme.ToString(),
+        reportFormat = p.ReportFormat.ToString(),
+        p.NotificationsEnabled,
+        aiResponseLevel = AiResponseLevelToString(p.AiResponseLevel),
+        p.FontSize,
+        p.CreatedAt,
+        p.UpdatedAt,
+        p.User
+    };
+    return Results.Ok(new { preferences, message = Get("Success_PreferencesFound", lang) });
 }).WithTags("Preferences").WithSummary("Obtener preferencias por UserId");
 
 api.MapPatch("/preferences/{id:int}", async (UsersDbContext db, int id, PreferencePatchDto dto, HttpContext context) =>
