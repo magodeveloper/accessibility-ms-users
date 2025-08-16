@@ -542,4 +542,7 @@ if (app.Environment.IsDevelopment())
 await app.RunAsync();
 
 // Necesario para tests de integración (WebApplicationFactory)
-public partial class Program { protected Program() { } }
+namespace Users.Api
+{
+    public partial class Program { protected Program() { } }
+}

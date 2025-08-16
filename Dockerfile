@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-COPY ms-users.sln ./
+COPY Users.sln ./
 COPY src/Users.Api/Users.Api.csproj                      src/Users.Api/
 COPY src/Users.Application/Users.Application.csproj      src/Users.Application/
 COPY src/Users.Domain/Users.Domain.csproj                src/Users.Domain/

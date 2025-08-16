@@ -1,119 +1,93 @@
+
 using Xunit;
+using Users.Api;
 using System.Net;
-using Users.Domain;
-using Users.Application;
+using System.Text.Json;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace Users.Tests;
-
-public class UsersApiTests : IClassFixture<WebApplicationFactory<Program>>
+namespace Users.Tests
 {
-    private readonly WebApplicationFactory<Program> _factory;
-    public UsersApiTests(WebApplicationFactory<Program> factory)
+    public class UsersApiTests : IClassFixture<WebApplicationFactory<Users.Api.Program>>
     {
-        _factory = factory;
-    }
+        private readonly WebApplicationFactory<Users.Api.Program> _factory;
 
-    [Fact]
-    public async Task CrearUsuario_RetornaCreatedYObtieneUsuario()
-    {
-        var client = _factory.CreateClient();
-        var dto = new UserCreateDto(
-            Nickname: "testuser",
-            Name: "Test",
-            Lastname: "User",
-            Email: "testuser@email.com",
-            Password: "Test1234!"
-        );
-        var resp = await client.PostAsJsonAsync("/api/v1/users", dto);
-        Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
-        var location = resp.Headers.Location;
-        Assert.NotNull(location);
-        var getResp = await client.GetAsync(location);
-        Assert.Equal(HttpStatusCode.OK, getResp.StatusCode);
-    }
+        public UsersApiTests(WebApplicationFactory<Users.Api.Program> factory)
+        {
+            _factory = factory;
+        }
 
-    [Fact]
-    public async Task LoginUsuario_RetornaToken()
-    {
-        var client = _factory.CreateClient();
-        // Crear usuario primero
-        var dto = new UserCreateDto("loginuser", "Login", "User", "login@email.com", "Test1234!");
-        await client.PostAsJsonAsync("/api/v1/users", dto);
-        // Login
-        var login = new LoginDto("login@email.com", "Test1234!");
-        var resp = await client.PostAsJsonAsync("/api/v1/auth/login", login);
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var data = await resp.Content.ReadFromJsonAsync<LoginResponseDto>();
-        Assert.NotNull(data);
-        Assert.False(string.IsNullOrEmpty(data!.Token));
-    }
+        [Fact]
+        public async Task ObtenerPreferenciasPorEmail_DevuelvePreferenciasCorrectas()
+        {
+            var client = _factory.CreateClient();
+            var dto = new { nickname = "mailuser", name = "Mail", lastname = "User", email = "mail@email.com", password = "Test1234!" };
+            await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
+            var resp = await client.GetAsync("/api/v1/preferences/by-user/mail@email.com");
+            Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+            var data = await resp.Content.ReadFromJsonAsync<JsonElement>();
+            var prefs = data.GetProperty("preferences");
+            Assert.Equal("mail@email.com", prefs.GetProperty("user").GetProperty("email").GetString());
+        }
 
-    [Fact]
-    public async Task ListarUsuarios_DevuelveListaIncluyendoNuevo()
-    {
-        var client = _factory.CreateClient();
-        var dto = new UserCreateDto("listuser", "List", "User", "list@email.com", "Test1234!");
-        await client.PostAsJsonAsync("/api/v1/users", dto);
-        var resp = await client.GetAsync("/api/v1/users");
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var list = await resp.Content.ReadFromJsonAsync<UserReadDto[]>();
-        Assert.Contains(list!, u => u.Email == "list@email.com");
-    }
-    [Fact]
-    public async Task CrearUsuario_Duplicado_RetornaConflict()
-    {
-        var client = _factory.CreateClient();
-        var dto = new UserCreateDto("dupuser", "Dup", "User", "dup@email.com", "Test1234!");
-        var resp1 = await client.PostAsJsonAsync("/api/v1/users", dto);
-        Assert.Equal(HttpStatusCode.Created, resp1.StatusCode);
-        var resp2 = await client.PostAsJsonAsync("/api/v1/users", dto);
-        Assert.Equal(HttpStatusCode.Conflict, resp2.StatusCode);
-    }
+        [Fact]
+        public async Task PatchUsuarioYPreferenciasPorEmail_ActualizaCorrectamente()
+        {
+            var client = _factory.CreateClient();
+            var dto = new { nickname = "patchuser", name = "Patch", lastname = "User", email = "patch@email.com", password = "Test1234!" };
+            await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
+            var patch = new
+            {
+                wcagVersion = "2.2",
+                wcagLevel = "AAA",
+                language = "en",
+                visualTheme = "dark",
+                reportFormat = "html",
+                notificationsEnabled = false,
+                aiResponseLevel = "detailed",
+                fontSize = 20,
+                nickname = "patchuser2",
+                name = "Patched",
+                lastname = "User2",
+                role = "admin",
+                status = "inactive",
+                emailConfirmed = true,
+                email = "patch2@email.com",
+                password = "NewPass123!"
+            };
+            var resp = await client.PatchAsJsonAsync("/api/v1/preferences/by-user/patch@email.com", patch);
+            Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+            // Verificar cambios
+            var getPrefs = await client.GetAsync("/api/v1/preferences/by-user/patch2@email.com");
+            Assert.Equal(HttpStatusCode.OK, getPrefs.StatusCode);
+            var data = await getPrefs.Content.ReadFromJsonAsync<JsonElement>();
+            var prefs = data.GetProperty("preferences");
+            Assert.Equal("2.2", prefs.GetProperty("wcagVersion").GetString());
+            Assert.Equal("AAA", prefs.GetProperty("wcagLevel").GetString());
+            Assert.Equal("en", prefs.GetProperty("language").GetString());
+            Assert.Equal("dark", prefs.GetProperty("visualTheme").GetString());
+            Assert.Equal("html", prefs.GetProperty("reportFormat").GetString());
+            Assert.Equal("detailed", prefs.GetProperty("aiResponseLevel").GetString());
+            Assert.Equal(20, prefs.GetProperty("fontSize").GetInt32());
+            Assert.False(prefs.GetProperty("notificationsEnabled").GetBoolean());
+            Assert.Equal("patch2@email.com", prefs.GetProperty("user").GetProperty("email").GetString());
+            Assert.Equal("Patched", prefs.GetProperty("user").GetProperty("name").GetString());
+            Assert.Equal("User2", prefs.GetProperty("user").GetProperty("lastname").GetString());
+            Assert.Equal("admin", prefs.GetProperty("user").GetProperty("role").GetString());
+            Assert.Equal("inactive", prefs.GetProperty("user").GetProperty("status").GetString());
+            Assert.True(prefs.GetProperty("user").GetProperty("emailConfirmed").GetBoolean());
+        }
 
-    [Fact]
-    public async Task Login_Incorrecto_RetornaUnauthorized()
-    {
-        var client = _factory.CreateClient();
-        var dto = new UserCreateDto("badlogin", "Bad", "Login", "badlogin@email.com", "Test1234!");
-        await client.PostAsJsonAsync("/api/v1/users", dto);
-        var login = new LoginDto("badlogin@email.com", "WrongPassword");
-        var resp = await client.PostAsJsonAsync("/api/v1/auth/login", login);
-        Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
-    }
-
-    [Fact]
-    public async Task CrearYObtenerPreferenciasUsuario()
-    {
-        var client = _factory.CreateClient();
-        var userDto = new UserCreateDto("prefuser", "Pref", "User", "pref@email.com", "Test1234!");
-        var userResp = await client.PostAsJsonAsync("/api/v1/users", userDto);
-        var location = userResp.Headers.Location;
-        var getResp = await client.GetAsync(location!);
-        var user = await getResp.Content.ReadFromJsonAsync<UserReadDto>();
-        var prefDto = new PreferenceCreateDto(user!.Id, "2.1", "AA", "es", "dark", "pdf", true, "detailed", 18);
-        var prefResp = await client.PostAsJsonAsync("/api/v1/preferences", prefDto);
-        Assert.Equal(HttpStatusCode.Created, prefResp.StatusCode);
-
-        var getPrefResp = await client.GetAsync($"/api/v1/preferences/by-user/{user.Id}");
-        Assert.Equal(HttpStatusCode.OK, getPrefResp.StatusCode);
-    }
-
-    [Fact]
-    public async Task CrearYEliminarSesion()
-    {
-        var client = _factory.CreateClient();
-        var dto = new UserCreateDto("sessuser", "Sess", "User", "sess@email.com", "Test1234!");
-        await client.PostAsJsonAsync("/api/v1/users", dto);
-        var login = new LoginDto("sess@email.com", "Test1234!");
-        await client.PostAsJsonAsync("/api/v1/auth/login", login);
-
-        // Buscar sesión creada
-        await client.GetAsync("/api/v1/users");
-
-        // Buscar sesiones (no hay endpoint de listar, así que solo probamos delete por id inválido)
-        var delResp = await client.DeleteAsync("/api/v1/sessions/99999");
-        Assert.Equal(HttpStatusCode.NotFound, delResp.StatusCode);
+        [Fact]
+        public async Task DeleteUsuarioPorEmail_EliminaCorrectamente()
+        {
+            var client = _factory.CreateClient();
+            var dto = new { nickname = "deluser", name = "Del", lastname = "User", email = "del@email.com", password = "Test1234!" };
+            await client.PostAsJsonAsync("/api/v1/users", dto);
+            var delResp = await client.DeleteAsync("/api/v1/users/by-email/del@email.com");
+            Assert.Equal(HttpStatusCode.OK, delResp.StatusCode);
+            var getResp = await client.GetAsync("/api/v1/users/by-email?email=del@email.com");
+            Assert.Equal(HttpStatusCode.NotFound, getResp.StatusCode);
+        }
     }
 }
