@@ -24,7 +24,7 @@ jobs:
         options: >-
           --health-cmd="mysqladmin ping -h localhost -pdevpass" --health-interval=10s --health-timeout=5s --health-retries=10
     env:
-      ConnectionStrings__Default: server=127.0.0.1;port=3307;database=usersdb;user=devuser;password=${{ secrets.MYSQL_PASSWORD }};TreatTinyAsBoolean=false
+      ConnectionStrings__Default: server=127.0.0.1;port=3307;database=usersdb;user=devuser;password=devpass;TreatTinyAsBoolean=false
       ASPNETCORE_ENVIRONMENT: Development
       AUTH_SESSION_TOKEN_MINUTES: 1440
     steps:
