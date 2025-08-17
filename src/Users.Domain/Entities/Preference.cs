@@ -6,7 +6,7 @@ namespace Users.Domain.Entities
     {
         public int Id { get; set; }
         public int UserId { get; set; }
-        public string WcagVersion { get; set; }
+        public required string WcagVersion { get; set; }
         public WcagLevel WcagLevel { get; set; }
         public Language Language { get; set; } = Language.es;
         public VisualTheme VisualTheme { get; set; } = VisualTheme.light;
