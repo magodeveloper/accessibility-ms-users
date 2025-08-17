@@ -17,14 +17,14 @@ jobs:
       mysql:
         image: mysql:8.4
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: rootpass
           MYSQL_DATABASE: usersdb
           MYSQL_USER: devuser
           MYSQL_PASSWORD: devpass
         ports:
           - 3307:3306  # Expone el puerto 3306 del contenedor en el 3307 del host
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -p${{ secrets.MYSQL_ROOT_PASSWORD }}" --health-interval=10s --health-timeout=5s --health-retries=10
+          --health-cmd="mysqladmin ping -h localhost -prootpass" --health-interval=10s --health-timeout=5s --health-retries=10
     # Variables de entorno para la app y los tests
     env:
       ConnectionStrings__Default: server=127.0.0.1;port=3307;database=usersdb;user=devuser;password=${{ secrets.MYSQL_PASSWORD }};TreatTinyAsBoolean=false
