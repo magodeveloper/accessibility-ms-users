@@ -8,8 +8,6 @@ public static class ServiceRegistration
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-        // 1) Lee ConnectionStrings:Default (env var: ConnectionStrings__Default)
-        // 2) Fallback DEV local (API fuera de Docker, MySQL local en 3306)
         var cs = config.GetConnectionString("Default")
                  ?? "server=127.0.0.1;port=3306;database=ms_users;user=msu;password=msupass;TreatTinyAsBoolean=false";
 

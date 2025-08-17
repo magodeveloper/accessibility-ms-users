@@ -38,4 +38,3 @@ public record PreferenceUserPatchDto(
     string? Email,
     string? Password
 );
-

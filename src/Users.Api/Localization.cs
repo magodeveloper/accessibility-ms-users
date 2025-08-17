@@ -1,5 +1,5 @@
-using System.Globalization;
 using System.Text.Json;
+using System.Globalization;
 
 namespace Users.Api;
 

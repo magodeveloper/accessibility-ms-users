@@ -14,7 +14,8 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
     <!-- Provider MySQL (compatible EF Core 9) -->
-    <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0-preview.2.efcore.9.0.0" />
+    <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql"
+      Version="9.0.0-preview.2.efcore.9.0.0" />
     <!-- API / OpenAPI / Swagger -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.8" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="9.0.3" />
@@ -38,5 +39,7 @@
     <PackageVersion Include="FluentAssertions" Version="6.12.0" />
     <PackageVersion Include="DotNet.Testcontainers" Version="3.9.0" />
     <PackageVersion Include="MySqlConnector" Version="2.4.5" />
+    <!-- Localización -->
+    <PackageVersion Include="Microsoft.Extensions.Localization" Version="9.0.8" />
   </ItemGroup>
 </Project>

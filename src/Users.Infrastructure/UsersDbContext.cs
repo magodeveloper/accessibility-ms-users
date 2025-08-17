@@ -27,17 +27,16 @@ public sealed class UsersDbContext : DbContext
             e.HasIndex(x => x.Nickname).IsUnique();
             e.Property(x => x.Password).HasColumnName("password").HasMaxLength(60).IsRequired();
 
-            // Mapear enums -> cadenas EXACTAS de la tabla
             e.Property(x => x.Role).HasColumnName("role")
                 .HasConversion(
-                    v => v.ToString(),                         // admin/user
+                    v => v.ToString(),
                     v => Enum.Parse<UserRole>(v))
                 .HasMaxLength(5)
                 .IsRequired();
 
             e.Property(x => x.Status).HasColumnName("status")
                 .HasConversion(
-                    v => v.ToString(),                         // active/inactive/blocked
+                    v => v.ToString(),
                     v => Enum.Parse<UserStatus>(v))
                 .HasMaxLength(8)
                 .IsRequired();
@@ -61,7 +60,7 @@ public sealed class UsersDbContext : DbContext
             e.Property(x => x.TokenHash).HasColumnName("token_hash")
                 .HasMaxLength(64) // sha256 (hex)
                 .IsRequired()
-                .UseCollation("ascii_bin"); // EXACT match
+                .UseCollation("ascii_bin");
             e.HasIndex(x => x.TokenHash).IsUnique().HasDatabaseName("ux_sessions_token_hash");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
             e.Property(x => x.ExpiresAt).HasColumnName("expires_at");
@@ -75,7 +74,6 @@ public sealed class UsersDbContext : DbContext
 
             e.Property(x => x.UserId).HasColumnName("user_id").IsRequired();
 
-            // Enums -> cadenas exactas ("2.0"|"2.1"|"2.2") usando ValueConverter
             e.Property(x => x.WcagVersion)
                .HasColumnName("wcag_version")
                .HasConversion(WcagVersionConverter)
@@ -112,6 +110,7 @@ public sealed class UsersDbContext : DbContext
             e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
         });
     }
+
     private static readonly ValueConverter<WcagVersion, string> WcagVersionConverter =
         new(
             v => WcagVersionToString(v),
