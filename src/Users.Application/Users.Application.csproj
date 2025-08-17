@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Users.Domain\Users.Domain.csproj" />
+    <ProjectReference Include="..\Users.Infrastructure\Users.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" />

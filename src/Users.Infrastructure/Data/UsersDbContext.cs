@@ -1,8 +1,8 @@
-using Users.Domain;
+using Users.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Users.Infrastructure;
+namespace Users.Infrastructure.Data;
 
 public sealed class UsersDbContext : DbContext
 {
@@ -12,10 +12,10 @@ public sealed class UsersDbContext : DbContext
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<Preference> Preferences => Set<Preference>();
 
-    protected override void OnModelCreating(ModelBuilder b)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // USERS
-        b.Entity<User>(e =>
+        modelBuilder.Entity<User>(e =>
         {
             e.ToTable("users");
             e.HasKey(x => x.Id);
@@ -52,13 +52,13 @@ public sealed class UsersDbContext : DbContext
         });
 
         // SESSIONS
-        b.Entity<Session>(e =>
+        modelBuilder.Entity<Session>(e =>
         {
             e.ToTable("SESSIONS");
             e.HasKey(x => x.Id);
             e.Property(x => x.UserId).HasColumnName("user_id").IsRequired();
             e.Property(x => x.TokenHash).HasColumnName("token_hash")
-                .HasMaxLength(64) // sha256 (hex)
+                .HasMaxLength(64)
                 .IsRequired()
                 .UseCollation("ascii_bin");
             e.HasIndex(x => x.TokenHash).IsUnique().HasDatabaseName("ux_sessions_token_hash");
@@ -67,7 +67,7 @@ public sealed class UsersDbContext : DbContext
         });
 
         // PREFERENCES
-        b.Entity<Preference>(e =>
+        modelBuilder.Entity<Preference>(e =>
         {
             e.ToTable("PREFERENCES");
             e.HasKey(x => x.Id);
@@ -75,20 +75,19 @@ public sealed class UsersDbContext : DbContext
             e.Property(x => x.UserId).HasColumnName("user_id").IsRequired();
 
             e.Property(x => x.WcagVersion)
-               .HasColumnName("wcag_version")
-               .HasConversion(WcagVersionConverter)
-               .HasMaxLength(3)
-               .IsRequired();
+                .HasColumnName("wcag_version")
+                .HasMaxLength(3)
+                .IsRequired();
 
             e.Property(x => x.WcagLevel).HasColumnName("wcag_level")
               .HasConversion(
-                  v => v.ToString(), // A, AA, AAA
+                  v => v.ToString(),
                   v => Enum.Parse<WcagLevel>(v)
               ).HasMaxLength(3).IsRequired();
 
             e.Property(x => x.Language).HasColumnName("language")
               .HasConversion(
-                  v => v.ToString(), // es/en
+                  v => v.ToString(),
                   v => Enum.Parse<Language>(v)
               ).HasMaxLength(2).HasDefaultValue(Language.es);
 
@@ -102,32 +101,15 @@ public sealed class UsersDbContext : DbContext
 
             e.Property(x => x.NotificationsEnabled).HasColumnName("notifications_enabled");
             e.Property(x => x.AiResponseLevel).HasColumnName("ai_response_level")
-              .HasConversion(v => v.ToString(), v => Enum.Parse<AiResponseLevel>(v))
-              .HasMaxLength(12).HasDefaultValue(AiResponseLevel.intermediate);
+                .HasConversion(
+                        v => v != null ? v.ToString() : null,
+                        v => v != null ? Enum.Parse<AiResponseLevel>(v) : (AiResponseLevel?)null)
+                .HasMaxLength(12)
+                .HasDefaultValue(AiResponseLevel.intermediate);
 
             e.Property(x => x.FontSize).HasColumnName("font_size");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
             e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
         });
-    }
-
-    private static readonly ValueConverter<WcagVersion, string> WcagVersionConverter =
-        new(
-            v => WcagVersionToString(v),
-            s => StringToWcagVersion(s)
-        );
-
-    private static string WcagVersionToString(WcagVersion v)
-    {
-        if (v == WcagVersion._2_0) return "2.0";
-        if (v == WcagVersion._2_1) return "2.1";
-        return "2.2";
-    }
-
-    private static WcagVersion StringToWcagVersion(string s)
-    {
-        if (s == "2.0") return WcagVersion._2_0;
-        if (s == "2.1") return WcagVersion._2_1;
-        return WcagVersion._2_2;
     }
 }

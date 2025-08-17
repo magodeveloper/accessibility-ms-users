@@ -1,19 +1,7 @@
-﻿using System.Text;
-using BC = BCrypt.Net.BCrypt;
+using System.Text;
 using System.Security.Cryptography;
 
-namespace Users.Application;
-
-public interface IPasswordService
-{
-    string Hash(string plain);
-    bool Verify(string plain, string hash);
-}
-public sealed class BcryptPasswordService : IPasswordService
-{
-    public string Hash(string plain) => BC.HashPassword(plain);
-    public bool Verify(string plain, string hash) => BC.Verify(plain, hash);
-}
+namespace Users.Application.Services;
 
 public interface ISessionTokenService
 {
@@ -28,7 +16,9 @@ public sealed class SessionTokenService : ISessionTokenService
         // 32 bytes aleatorios -> base64url
         var bytes = RandomNumberGenerator.GetBytes(32);
         var token = Convert.ToBase64String(bytes)
-            .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
         return (token, HashToken(token));
     }
 

@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+
+using Users.Infrastructure.Data;
 namespace Users.Infrastructure;
 
 public static class ServiceRegistration

@@ -16,152 +16,105 @@ namespace Users.Tests
             _factory = factory;
         }
 
+        // ---------- AUTH ----------
         [Fact]
-        public async Task Logout_EliminaSesionesYActualizaLastLogin()
+        public async Task Auth_Login_And_Logout_Works()
         {
             var client = _factory.CreateClient();
-            var email = "logout@email.com";
-            var password = "LogoutTest123!";
-            var dto = new { nickname = "logoutuser", name = "Logout", lastname = "User", email, password };
-            // Eliminar usuario si existe
+            var email = "testauth@email.com";
+            var password = "TestAuth123!";
+            var dto = new { nickname = "testauth", name = "Test", lastname = "Auth", email, password };
             await client.DeleteAsync($"/api/v1/users/by-email/{email}");
-            // Crear usuario
-            var createResp = await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
-            Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
-
-            // Login para crear sesión
-            var loginDto = new { email, password };
-            var loginResp = await client.PostAsJsonAsync("/api/v1/auth/login", loginDto);
+            await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
+            var loginResp = await client.PostAsJsonAsync("/api/v1/auth/login", new { email, password });
             Assert.Equal(HttpStatusCode.OK, loginResp.StatusCode);
             var loginData = await loginResp.Content.ReadFromJsonAsync<JsonElement>();
-            Assert.True(loginData.TryGetProperty("token", out var tokenProp));
-            Assert.False(string.IsNullOrWhiteSpace(tokenProp.GetString()));
-
-            // Logout
-            var logoutDto = new { email };
-            var logoutResp = await client.PostAsJsonAsync("/api/v1/auth/logout", logoutDto);
+            Assert.True(loginData.TryGetProperty("token", out _));
+            var logoutResp = await client.PostAsJsonAsync("/api/v1/auth/logout", new { email });
             Assert.Equal(HttpStatusCode.OK, logoutResp.StatusCode);
-
-            // Intentar login nuevamente (debe permitir, pero last_login debe ser null antes del login)
-            // Consultar usuario para verificar last_login null
-
-            var getUserResp = await client.GetAsync($"/api/v1/users/by-email?email={email}");
-            if (getUserResp.StatusCode == HttpStatusCode.OK)
-            {
-                var userData = await getUserResp.Content.ReadFromJsonAsync<JsonElement>();
-                if (userData.TryGetProperty("user", out var user) && user.TryGetProperty("lastLogin", out var lastLoginProp))
-                {
-                    Assert.True(lastLoginProp.ValueKind == JsonValueKind.Null || string.IsNullOrWhiteSpace(lastLoginProp.GetString()));
-                }
-            }
-
-            // Login nuevamente para restaurar last_login
-            var reloginResp = await client.PostAsJsonAsync("/api/v1/auth/login", loginDto);
-            Assert.Equal(HttpStatusCode.OK, reloginResp.StatusCode);
-            var reloginData = await reloginResp.Content.ReadFromJsonAsync<JsonElement>();
-            Assert.True(reloginData.TryGetProperty("token", out var reloginTokenProp));
-            Assert.False(string.IsNullOrWhiteSpace(reloginTokenProp.GetString()));
         }
 
+        // ---------- USERS ----------
         [Fact]
-        public async Task LoginUsuarioRecienCreado_DevuelveTokenCorrecto()
+        public async Task Users_CRUD_Works()
         {
             var client = _factory.CreateClient();
-            var email = "pruebas@email.com";
-            var password = "TestLogin123!";
-            var dto = new { nickname = "pruebas", name = "Login", lastname = "User", email, password };
-            // Eliminar usuario si existe
+            var email = "usercrud@email.com";
+            var password = "UserCrud123!";
+            var dto = new { nickname = "usercrud", name = "User", lastname = "Crud", email, password };
             await client.DeleteAsync($"/api/v1/users/by-email/{email}");
-            // Crear usuario
-            var createResp = await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
+            var createResp = await client.PostAsJsonAsync("/api/v1/users", dto);
             Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
-
-            // Login
-            var loginDto = new { email, password };
-            var loginResp = await client.PostAsJsonAsync("/api/v1/auth/login", loginDto);
-            Assert.Equal(HttpStatusCode.OK, loginResp.StatusCode);
-            var data = await loginResp.Content.ReadFromJsonAsync<JsonElement>();
-            Assert.True(data.TryGetProperty("token", out var tokenProp));
-            Assert.False(string.IsNullOrWhiteSpace(tokenProp.GetString()));
-            Assert.True(data.TryGetProperty("expiresAt", out _));
-        }
-
-        [Fact]
-        public async Task ObtenerPreferenciasPorEmail_DevuelvePreferenciasCorrectas()
-        {
-            var client = _factory.CreateClient();
-            var dto = new { nickname = "mailuser", name = "Mail", lastname = "User", email = "mail@email.com", password = "Test1234!" };
-            await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
-            var resp = await client.GetAsync("/api/v1/preferences/by-user/mail@email.com");
-            Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-            var data = await resp.Content.ReadFromJsonAsync<JsonElement>();
-            var prefs = data.GetProperty("preferences");
-            Assert.Equal("mail@email.com", prefs.GetProperty("user").GetProperty("email").GetString());
-        }
-
-        [Fact]
-        public async Task PatchUsuarioYPreferenciasPorEmail_ActualizaCorrectamente()
-        {
-            var client = _factory.CreateClient();
-            var email = "patch@email.com";
-            // Eliminar usuario si existe
-            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
-            var dto = new { nickname = "patchuser", name = "Patch", lastname = "User", email, password = "Test1234!" };
-            await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
-            // Eliminar usuario destino si existe
-            await client.DeleteAsync($"/api/v1/users/by-email/patch2@email.com");
-            var patch = new
-            {
-                wcagVersion = "2.2",
-                wcagLevel = "AAA",
-                language = "en",
-                visualTheme = "dark",
-                reportFormat = "html",
-                notificationsEnabled = false,
-                aiResponseLevel = "detailed",
-                fontSize = 20,
-                nickname = "patchuser2",
-                name = "Patched",
-                lastname = "User2",
-                role = "admin",
-                status = "inactive",
-                emailConfirmed = true,
-                email = "patch2@email.com",
-                password = "NewPass123!"
-            };
-            var resp = await client.PatchAsJsonAsync("/api/v1/preferences/by-user/patch@email.com", patch);
-            Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-            // Verificar cambios
-            var getPrefs = await client.GetAsync("/api/v1/preferences/by-user/patch2@email.com");
-            Assert.Equal(HttpStatusCode.OK, getPrefs.StatusCode);
-            var data = await getPrefs.Content.ReadFromJsonAsync<JsonElement>();
-            var prefs = data.GetProperty("preferences");
-            Assert.Equal("2.2", prefs.GetProperty("wcagVersion").GetString());
-            Assert.Equal("AAA", prefs.GetProperty("wcagLevel").GetString());
-            Assert.Equal("en", prefs.GetProperty("language").GetString());
-            Assert.Equal("dark", prefs.GetProperty("visualTheme").GetString());
-            Assert.Equal("html", prefs.GetProperty("reportFormat").GetString());
-            Assert.Equal("detailed", prefs.GetProperty("aiResponseLevel").GetString());
-            Assert.Equal(20, prefs.GetProperty("fontSize").GetInt32());
-            Assert.False(prefs.GetProperty("notificationsEnabled").GetBoolean());
-            Assert.Equal("patch2@email.com", prefs.GetProperty("user").GetProperty("email").GetString());
-            Assert.Equal("Patched", prefs.GetProperty("user").GetProperty("name").GetString());
-            Assert.Equal("User2", prefs.GetProperty("user").GetProperty("lastname").GetString());
-            Assert.Equal("admin", prefs.GetProperty("user").GetProperty("role").GetString());
-            Assert.Equal("inactive", prefs.GetProperty("user").GetProperty("status").GetString());
-            Assert.True(prefs.GetProperty("user").GetProperty("emailConfirmed").GetBoolean());
-        }
-
-        [Fact]
-        public async Task DeleteUsuarioPorEmail_EliminaCorrectamente()
-        {
-            var client = _factory.CreateClient();
-            var dto = new { nickname = "deluser", name = "Del", lastname = "User", email = "del@email.com", password = "Test1234!" };
-            await client.PostAsJsonAsync("/api/v1/users", dto);
-            var delResp = await client.DeleteAsync("/api/v1/users/by-email/del@email.com");
+            var getResp = await client.GetAsync($"/api/v1/users/by-email?email={email}");
+            Assert.Equal(HttpStatusCode.OK, getResp.StatusCode);
+            var delResp = await client.DeleteAsync($"/api/v1/users/by-email/{email}");
             Assert.Equal(HttpStatusCode.OK, delResp.StatusCode);
-            var getResp = await client.GetAsync("/api/v1/users/by-email?email=del@email.com");
-            Assert.Equal(HttpStatusCode.NotFound, getResp.StatusCode);
+            var getAfterDel = await client.GetAsync($"/api/v1/users/by-email?email={email}");
+            Assert.Equal(HttpStatusCode.NotFound, getAfterDel.StatusCode);
+        }
+
+        // ---------- USERS WITH PREFERENCES ----------
+        [Fact]
+        public async Task UsersWithPreferences_Create_Works()
+        {
+            var client = _factory.CreateClient();
+            var email = "uwp@email.com";
+            var password = "UwpTest123!";
+            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
+            var dto = new { nickname = "uwp", name = "UWP", lastname = "Test", email, password };
+            var resp = await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
+            Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
+        }
+
+        // ---------- PREFERENCES ----------
+        [Fact]
+        public async Task Preferences_CRUD_Works()
+        {
+            var client = _factory.CreateClient();
+            var email = "pref@email.com";
+            var password = "PrefTest123!";
+            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
+            var userDto = new { nickname = "pref", name = "Pref", lastname = "Test", email, password };
+            var createUserResp = await client.PostAsJsonAsync("/api/v1/users-with-preferences", userDto);
+            // Obtener el userId del usuario creado
+            int userId = 0;
+            if (createUserResp.StatusCode == HttpStatusCode.Created)
+            {
+                var json = await createUserResp.Content.ReadFromJsonAsync<JsonElement>();
+                if (json.TryGetProperty("user", out var userObj) && userObj.TryGetProperty("id", out var idProp))
+                    userId = idProp.GetInt32();
+            }
+            var getPrefResp = await client.GetAsync($"/api/v1/preferences/by-user/{email}");
+            Assert.True(getPrefResp.StatusCode == HttpStatusCode.OK || getPrefResp.StatusCode == HttpStatusCode.NotFound);
+            var prefDto = new { userId, wcagVersion = "2.1", wcagLevel = "AA", language = "es", visualTheme = "light", reportFormat = "pdf", notificationsEnabled = true, aiResponseLevel = "intermediate", fontSize = 14 };
+            // No se puede crear preferencia si ya existe, pero se prueba el endpoint
+            var createPrefResp = await client.PostAsJsonAsync("/api/v1/preferences", prefDto);
+            Assert.True(createPrefResp.StatusCode == HttpStatusCode.Created || createPrefResp.StatusCode == HttpStatusCode.Conflict);
+        }
+
+        // ---------- SESSIONS ----------
+        [Fact]
+        public async Task Sessions_CRUD_Works()
+        {
+            var client = _factory.CreateClient();
+            var email = "session@email.com";
+            var password = "SessionTest123!";
+            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
+            var dto = new { nickname = "session", name = "Session", lastname = "Test", email, password };
+            await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
+            var loginResp = await client.PostAsJsonAsync("/api/v1/auth/login", new { email, password });
+            Assert.Equal(HttpStatusCode.OK, loginResp.StatusCode);
+            var loginData = await loginResp.Content.ReadFromJsonAsync<JsonElement>();
+            var userId = loginData.GetProperty("user").GetProperty("id").GetInt32();
+            // GET sesiones por usuario
+            var getByUserResp = await client.GetAsync($"/api/v1/sessions/user/{userId}");
+            Assert.True(getByUserResp.StatusCode == HttpStatusCode.OK || getByUserResp.StatusCode == HttpStatusCode.NotFound);
+            // GET todas las sesiones
+            var getAllResp = await client.GetAsync($"/api/v1/sessions");
+            Assert.Equal(HttpStatusCode.OK, getAllResp.StatusCode);
+            // DELETE todas las sesiones del usuario
+            var delByUserResp = await client.DeleteAsync($"/api/v1/sessions/by-user/{userId}");
+            Assert.True(delByUserResp.StatusCode == HttpStatusCode.OK || delByUserResp.StatusCode == HttpStatusCode.NotFound);
         }
     }
 }

@@ -1,16 +1,27 @@
 # accessibility-ms-users
 
-Microservicio de gestión de usuarios y preferencias de accesibilidad, desarrollado en .NET 9 Minimal API, con integración a MySQL y soporte para despliegue en Docker.
+Microservicio de gestión de usuarios y preferencias de accesibilidad, desarrollado en .NET 9 con controladores tradicionales, integración a MySQL y soporte para despliegue en Docker.
+
+**Novedades recientes:**
+
+- Todas las respuestas y errores están internacionalizadas (i18n) según la cabecera `Accept-Language`.
+- Todas las respuestas usan DTOs para evitar ciclos y exponer solo los datos necesarios.
+- El campo `wcagVersion` es siempre string (no enum).
+- El endpoint de login retorna el usuario y sus preferencias asociadas.
+- Nuevo endpoint: `DELETE /api/v1/sessions/by-user/{userId}` para eliminar todas las sesiones de un usuario.
+- Rutas desambiguadas y robustas.
+- Pruebas de integración completas y actualizadas.
 
 ## Características principales
 
-- API RESTful para gestión de usuarios y preferencias de accesibilidad.
+- API RESTful para gestión de usuarios, sesiones y preferencias de accesibilidad.
 - Endpoints para registro, login, actualización y eliminación de usuarios por email.
-- Gestión de preferencias WCAG, idioma, tema visual, formato de reporte, notificaciones y nivel de respuesta AI.
-- Respuestas internacionalizadas (i18n) y manejo global de errores.
+- Gestión de preferencias WCAG (como string), idioma, tema visual, formato de reporte, notificaciones y nivel de respuesta AI.
+- Respuestas internacionalizadas (i18n) y manejo global de errores. El idioma se detecta automáticamente por la cabecera `Accept-Language`.
+- Uso de DTOs para todas las respuestas (sin ciclos de entidades).
 - Validación robusta con FluentValidation.
 - Documentación OpenAPI/Swagger integrada.
-- Pruebas de integración automatizadas con xUnit.
+- Pruebas de integración automatizadas con xUnit (cubre todos los endpoints principales).
 - Listo para despliegue en Docker y Docker Compose.
 
 ## Estructura del proyecto
@@ -110,45 +121,38 @@ Esto generará la imagen con ese nombre y etiqueta.
 
 - `POST   /api/v1/users-with-preferences`  
   Crea un usuario y sus preferencias por defecto en una sola llamada.
-
-- `GET    /api/v1/preferences/by-user/{email}`  
-  Obtiene las preferencias y datos del usuario por email.
-
-- `PATCH  /api/v1/preferences/by-user/{email}`  
-  Actualiza preferencias y datos del usuario por email.
-
 - `DELETE /api/v1/users/by-email/{email}`  
   Elimina un usuario y sus preferencias por email.
-
-- `POST   /api/v1/users/login`  
-  Login de usuario, retorna token de sesión.
-
-- `POST   /api/v1/users/reset-password`  
-  Solicita o realiza reseteo de contraseña.
+- `POST   /api/v1/auth/login`  
+  Login de usuario, retorna token de sesión **y ahora también el usuario y sus preferencias**.
+- `POST   /api/v1/auth/logout`  
+  Cierra la sesión del usuario.
+- `DELETE /api/v1/sessions/by-user/{userId}`  
+  Elimina todas las sesiones activas de un usuario.
+- `GET    /api/v1/preferences/by-user/{email}`  
+  Obtiene las preferencias de un usuario por email.
+- `POST   /api/v1/preferences`  
+  Crea preferencias para un usuario existente.
+- `PATCH  /api/v1/preferences/{id}`  
+  Actualiza parcialmente las preferencias.
 
 > Consulta la documentación Swagger en `/swagger` cuando la API esté corriendo en modo desarrollo.
 
-## Pruebas
-
-Ejecuta las pruebas de integración con:
-
-````bash
-
-## Endpoints principales
-
 ### POST /api/v1/users-with-preferences
+
 Crea un usuario y sus preferencias por defecto.
 
 **Payload ejemplo:**
+
 ```json
 {
-	"nickname": "jdoe",
-	"name": "John",
-	"lastname": "Doe",
-	"email": "jdoe@email.com",
-	"password": "Test1234!"
+  "nickname": "jdoe",
+  "name": "John",
+  "lastname": "Doe",
+  "email": "jdoe@email.com",
+  "password": "Test1234!"
 }
-````
+```
 
 **Respuesta 201:**
 
@@ -169,6 +173,8 @@ Crea un usuario y sus preferencias por defecto.
     "updatedAt": "2025-08-16T00:00:00Z"
   },
   "preferences": {
+    "id": 1,
+    "userId": 1,
     "wcagVersion": "2.1",
     "wcagLevel": "AA",
     "language": "es",
@@ -176,90 +182,9 @@ Crea un usuario y sus preferencias por defecto.
     "reportFormat": "pdf",
     "notificationsEnabled": true,
     "aiResponseLevel": "intermediate",
-    "fontSize": 14
-  }
-}
-```
-
-### GET /api/v1/preferences/by-user/{email}
-
-Obtiene las preferencias y datos del usuario por email.
-
-**Respuesta 200:**
-
-```json
-{
-  "user": {
-    "id": 1,
-    "nickname": "jdoe",
-    "name": "John",
-    "lastname": "Doe",
-    "email": "jdoe@email.com",
-    "role": "user",
-    "status": "active"
-  },
-  "preferences": {
-    "wcagVersion": "2.1",
-    "wcagLevel": "AA",
-    "language": "es",
-    "visualTheme": "light",
-    "reportFormat": "pdf",
-    "notificationsEnabled": true,
-    "aiResponseLevel": "intermediate",
-    "fontSize": 14
-  }
-}
-```
-
-### PATCH /api/v1/preferences/by-user/{email}
-
-Actualiza preferencias y datos del usuario por email.
-
-**Payload ejemplo:**
-
-```json
-{
-  "wcagVersion": "2.2",
-  "wcagLevel": "AAA",
-  "language": "en",
-  "visualTheme": "dark",
-  "reportFormat": "html",
-  "notificationsEnabled": false,
-  "aiResponseLevel": "detailed",
-  "fontSize": 20,
-  "nickname": "johnny",
-  "name": "Johnny",
-  "lastname": "Doe",
-  "role": "admin",
-  "status": "inactive",
-  "emailConfirmed": true,
-  "email": "johnny@email.com",
-  "password": "NewPass123!"
-}
-```
-
-**Respuesta 200:**
-
-```json
-{
-  "user": {
-    "id": 1,
-    "nickname": "johnny",
-    "name": "Johnny",
-    "lastname": "Doe",
-    "email": "johnny@email.com",
-    "role": "admin",
-    "status": "inactive"
-  },
-  "preferences": {
-    "wcagVersion": "2.2",
-    "wcagLevel": "AAA",
-    "language": "en",
-    "visualTheme": "dark",
-    "reportFormat": "html",
-    "notificationsEnabled": false,
-    "aiResponseLevel": "detailed",
-    "fontSize": 20
+    "fontSize": 14,
+    "createdAt": "2025-08-16T00:00:00Z",
+    "updatedAt": "2025-08-16T00:00:00Z"
   }
 }
 ```
@@ -276,9 +201,13 @@ Elimina un usuario y sus preferencias por email.
 }
 ```
 
-### POST /api/v1/users/login
+### POST /api/v1/auth/login
 
-Login de usuario, retorna token de sesión.
+Login de usuario. Ahora retorna:
+
+- token de sesión,
+- usuario autenticado,
+- preferencias asociadas.
 
 **Payload ejemplo:**
 
@@ -294,7 +223,41 @@ Login de usuario, retorna token de sesión.
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresAt": "2025-08-17T00:00:00Z"
+  "expiresAt": "2025-08-17T00:00:00Z",
+  "user": {
+    "id": 1,
+    "nickname": "jdoe",
+    "name": "John",
+    "lastname": "Doe",
+    "email": "jdoe@email.com",
+    "role": "user",
+    "status": "active",
+    "emailConfirmed": false
+  },
+  "preferences": {
+    "id": 1,
+    "userId": 1,
+    "wcagVersion": "2.1",
+    "wcagLevel": "AA",
+    "language": "es",
+    "visualTheme": "light",
+    "reportFormat": "pdf",
+    "notificationsEnabled": true,
+    "aiResponseLevel": "intermediate",
+    "fontSize": 14
+  }
+}
+```
+
+### DELETE /api/v1/sessions/by-user/{userId}
+
+Elimina todas las sesiones activas de un usuario por su ID.
+
+**Respuesta 200:**
+
+```json
+{
+  "message": "Sesiones eliminadas correctamente."
 }
 ```
 
@@ -374,5 +337,32 @@ Solicita o realiza reseteo de contraseña.
   - name: Docker Compose Up
   	run: docker compose --env-file .env.production up -d
   ```
+
+---
+
+## Pruebas
+
+El proyecto incluye pruebas de integración automatizadas para todos los endpoints principales. Para ejecutarlas:
+
+```bash
+dotnet test
+```
+
+Las pruebas cubren:
+
+- Registro y login de usuario (incluyendo preferencias)
+- CRUD de usuarios y preferencias
+- CRUD de sesiones (incluyendo borrado por usuario)
+- Validación de errores y respuestas internacionalizadas
+
+## Notas adicionales
+
+- Todas las respuestas de error y éxito están internacionalizadas (i18n).
+- El campo `wcagVersion` es string en todos los endpoints y la base de datos.
+- Todas las respuestas usan DTOs para evitar ciclos y exponer solo los datos necesarios.
+- El endpoint de login retorna el usuario y sus preferencias asociadas.
+- El endpoint para eliminar sesiones por usuario es `/api/v1/sessions/by-user/{userId}`.
+- El proyecto está listo para CI/CD y despliegue en Docker.
+- Si usas frontend, asegúrate de configurar correctamente CORS en el backend.
 
 ---

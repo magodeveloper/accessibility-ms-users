@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Globalization;
 
-namespace Users.Api;
+namespace Users.Application;
 
 public static class Localization
 {
