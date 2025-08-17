@@ -10,9 +10,7 @@ on:
 
 jobs:
   build-test:
-    # Usa una VM Ubuntu para el job
     runs-on: ubuntu-latest
-    # Levanta un servicio MySQL 8.4 para pruebas
     services:
       mysql:
         image: mysql:8.4
@@ -24,39 +22,31 @@ jobs:
         ports:
           - 3307:3306  # Expone el puerto 3306 del contenedor en el 3307 del host
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -prootpass" --health-interval=10s --health-timeout=5s --health-retries=10
-    # Variables de entorno para la app y los tests
+          --health-cmd="mysqladmin ping -h localhost -pdevpass" --health-interval=10s --health-timeout=5s --health-retries=10
     env:
       ConnectionStrings__Default: server=127.0.0.1;port=3307;database=usersdb;user=devuser;password=${{ secrets.MYSQL_PASSWORD }};TreatTinyAsBoolean=false
       ASPNETCORE_ENVIRONMENT: Development
       AUTH_SESSION_TOKEN_MINUTES: 1440
     steps:
-      # Descarga el código fuente del repositorio
       - uses: actions/checkout@v4
-      # Instala el SDK de .NET 9
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-      # Restaura las dependencias de NuGet
       - name: Restore dependencies
         run: dotnet restore Users.sln
-      # Compila la solución en modo Release
       - name: Build
         run: dotnet build Users.sln --no-restore --configuration Release
-      # Espera a que MySQL esté listo antes de correr los tests
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 -P3307 -p${{ secrets.MYSQL_PASSWORD }} --silent; then exit 0; fi
+            if mysqladmin ping -h 127.0.0.1 -P3307 -pdevpass --silent; then exit 0; fi
             sleep 2
           done
           exit 1
         shell: bash
-      # Ejecuta los tests y genera reporte de cobertura
       - name: Run tests with coverage
-        run: dotnet test Users.Tests/Users.Tests.csproj --no-build --configuration Release --collect:"XPlat Code Coverage"
-      # Sube el reporte de cobertura a Codecov (requiere CODECOV_TOKEN si el repo es privado)
+        run: dotnet test src/Users.Tests/Users.Tests.csproj --no-build --configuration Release --collect:"XPlat Code Coverage"
       - name: Report coverage
         uses: codecov/codecov-action@v4
         with:
