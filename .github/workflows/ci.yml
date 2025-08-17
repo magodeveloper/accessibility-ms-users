@@ -20,7 +20,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           MYSQL_DATABASE: usersdb
           MYSQL_USER: devuser
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_PASSWORD: devpass
         ports:
           - 3307:3306  # Expone el puerto 3306 del contenedor en el 3307 del host
         options: >-
