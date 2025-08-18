@@ -20,25 +20,39 @@ using Microsoft.Extensions.DependencyInjection;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi(); // .NET 9
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 // Registrar controladores MVC
-builder.Services.AddControllers();
+builder.Services.AddControllers(); // Controladores
 
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddScoped<IPasswordService, BcryptPasswordService>();
-builder.Services.AddSingleton<ISessionTokenService, SessionTokenService>();
+builder.Services.AddInfrastructure(builder.Configuration); // Infraestructura
+builder.Services.AddScoped<IPasswordService, BcryptPasswordService>(); // Servicio de contraseñas
+builder.Services.AddSingleton<ISessionTokenService, SessionTokenService>(); // Servicio de tokens de sesión
 
 // Servicios de dominio
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IPreferenceService, PreferenceService>();
-builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IUserService, UserService>(); // Servicio de usuarios
+builder.Services.AddScoped<IPreferenceService, PreferenceService>(); // Servicio de preferencias
+builder.Services.AddScoped<ISessionService, SessionService>(); // Servicio de sesiones
 
 // FluentValidation: registra todos los validadores del ensamblado
-builder.Services.AddValidatorsFromAssemblyContaining<UserCreateDtoValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UserCreateDtoValidator>(); // Validadores
 
-var app = builder.Build();
+// Swagger/OpenAPI
+builder.Services.AddEndpointsApiExplorer(); // Explorador de API
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Users API",
+        Version = "v1"
+    });
+});
+
+// Controllers
+builder.Services.AddControllers() // Controladores
+    .AddDataAnnotationsLocalization() // Localización de anotaciones de datos
+    .AddViewLocalization(); // Localización de vistas
+
+var app = builder.Build(); // Construcción de la aplicación
 
 // Migración automática de la base de datos al iniciar la API
 using (var scope = app.Services.CreateScope())
@@ -46,6 +60,13 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
     await db.Database.MigrateAsync();
 }
+
+var supportedCultures = new[] { "es", "en" };
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture("es")
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+app.UseRequestLocalization(localizationOptions);
 
 // Middleware global para manejo de errores uniformes
 app.UseExceptionHandler(errorApp =>
@@ -62,9 +83,14 @@ app.UseExceptionHandler(errorApp =>
     });
 });
 
+// app.UseHttpsRedirection();
+
+// app.UseAuthorization();
+
 // Habilitar el enrutamiento de controladores
 app.MapControllers();
 
+// Swagger/OpenAPI
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -72,7 +98,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-await app.RunAsync();
+await app.RunAsync(); // Ejecución de la aplicación
 
 // Necesario para tests de integración (WebApplicationFactory)
 namespace Users.Api
