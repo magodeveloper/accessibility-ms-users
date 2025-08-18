@@ -1,8 +1,9 @@
 using Users.Api;
 using Users.Api.Helpers;
+using Users.Application;
+using Users.Application.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Users.Application.Services.Session;
-using Users.Application.Dtos;
 
 namespace Users.Api.Controllers
 {

@@ -55,7 +55,7 @@ app.UseExceptionHandler(errorApp =>
         context.Response.ContentType = "application/json";
         // Detectar idioma desde el header Accept-Language o default 'es'
         var lang = context.Request.Headers["Accept-Language"].FirstOrDefault()?.Split(',')[0] ?? "es";
-        string Get(string key, string lang) => Users.Api.Localization.Get(key, lang);
+        string Get(string key, string lang) => Users.Application.Localization.Get(key, lang);
         var result = JsonSerializer.Serialize(new { error = Get("Error_InternalServer", lang) });
         context.Response.StatusCode = 500;
         await context.Response.WriteAsync(result);

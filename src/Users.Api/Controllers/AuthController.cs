@@ -1,5 +1,6 @@
 using Users.Api;
 using Users.Api.Helpers;
+using Users.Application;
 using Users.Domain.Entities;
 using Users.Application.Dtos;
 using Microsoft.AspNetCore.Mvc;

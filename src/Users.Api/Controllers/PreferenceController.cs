@@ -1,5 +1,6 @@
 using Users.Api;
 using Users.Api.Helpers;
+using Users.Application;
 using Users.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Users.Application.Services.Preference;
