@@ -10,7 +10,7 @@ public static class ServiceRegistration
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
         var cs = config.GetConnectionString("Default")
-                 ?? "server=127.0.0.1;port=3306;database=ms_users;user=msu;password=msupass;TreatTinyAsBoolean=false";
+                 ?? "server=127.0.0.1;port=3306;database=usersdb;user=msuser;password=msupass;TreatTinyAsBoolean=false";
 
         services.AddDbContext<UsersDbContext>(opt =>
         {
