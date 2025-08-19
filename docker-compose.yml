@@ -29,7 +29,6 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
       ConnectionStrings__Default: 'server=mysql;port=3306;database=${DB_NAME};user=${DB_USER};password=${DB_PASSWORD};TreatTinyAsBoolean=false'
-      # Puedes agregar más variables aquí si lo necesitas
     ports:
       - '${API_HOST_PORT:-8081}:8081'
 
