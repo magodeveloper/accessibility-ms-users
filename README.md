@@ -48,15 +48,41 @@ Microservicio de gestión de usuarios y preferencias de accesibilidad, desarroll
 Configura los archivos `.env.development` y `.env.production` para tus entornos. Ejemplo:
 
 ```env
+# .env.development
 ASPNETCORE_ENVIRONMENT=Development
 ASPNETCORE_URLS=http://+:8081
-DB_NAME=msusers
-DB_USER=msusers
-DB_PASSWORD=msusers123
+DB_NAME=usersdb
+DB_USER=msuser
+DB_PASSWORD=UsrApp2025SecurePass
+DB_ROOT_PASSWORD=aF3MK0ZuWMHHXyX1ZwWjmKoS4baBAUgL
 API_HOST_PORT=8081
+DB_PORT=3307
 ```
 
-> **Nota:** No es necesario definir `DB_HOST` ni `DB_PORT` en los archivos `.env`, ya que la comunicación interna entre contenedores Docker utiliza el nombre del servicio (`mysql`) y el puerto por defecto (`3306`). La cadena de conexión ya está configurada correctamente en `docker-compose.yml`.
+```env
+# .env.production - Cambiar passwords antes de usar en producción
+ASPNETCORE_ENVIRONMENT=Production
+ASPNETCORE_URLS=http://+:8081
+DB_NAME=usersdb_prod
+DB_USER=msuser_prod
+DB_PASSWORD=UsrApp2025SecurePassPROD
+DB_ROOT_PASSWORD=aF3MK0ZuWMHHXyX1ZwWjmKoS4baBAUgLPROD
+API_HOST_PORT=8081
+DB_PORT=3307
+MYSQL_CHARSET=utf8mb4
+MYSQL_COLLATION=utf8mb4_unicode_ci
+ENABLE_SSL=true
+```
+
+> **⚠️ Nota de Seguridad:** Los passwords mostrados son ejemplos para desarrollo. **CAMBIAR OBLIGATORIAMENTE** antes de usar en producción real.
+>
+> **📋 Variables Requeridas:**
+>
+> - `DB_ROOT_PASSWORD`: Password root de MySQL (32 caracteres seguros)
+> - `DB_PASSWORD`: Password del usuario de aplicación
+> - `DB_PORT`: Puerto externo para conectividad (3307 para Users)
+>
+> **🔧 Comunicación Interna:** Los contenedores Docker usan el nombre del servicio (`mysql`) y puerto interno (`3306`) automáticamente.
 
 ## Uso con Docker Compose
 
@@ -396,6 +422,43 @@ Invoke-RestMethod -Uri "http://localhost:8081/api/v1/users/all-data" -Method Del
   ```
 
 ---
+
+## 🧪 Pruebas y Base de Datos de Test
+
+### Pruebas de Integración
+
+El proyecto incluye pruebas de integración automatizadas para todos los endpoints principales:
+
+```bash
+# Ejecutar todas las pruebas
+dotnet test
+
+# Ejecutar pruebas con detalles
+dotnet test --verbosity normal
+
+# Ejecutar pruebas específicas
+dotnet test --filter "FullyQualifiedName~Users.Tests"
+```
+
+### Inicialización de Base de Datos de Test
+
+Para tests que requieren base de datos real (no InMemory):
+
+```powershell
+# Windows PowerShell
+.\init-test-databases.ps1
+
+# Linux/macOS
+./init-test-databases.sh
+```
+
+**Configuración de Test:**
+
+- **Root Password**: `eJ6RO5aYXQLLacA5azaqoOsW8feFFYkP`
+- **Test User**: `testuser` / `TestApp2025SecurePass`
+- **Bases de datos**: `usersdb_test`, `analysisdb_test`, `reportsdb_test`
+
+> **🔧 Los scripts son idempotentes:** Pueden ejecutarse múltiples veces sin problemas.
 
 ## Pruebas
 
