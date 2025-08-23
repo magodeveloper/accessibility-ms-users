@@ -121,11 +121,22 @@ namespace Users.Application.Services.User
                 await _db.SaveChangesAsync();
 
                 // Reset auto increment IDs solo para bases de datos relacionales (no InMemory)
-                if (_db.Database.ProviderName != "Microsoft.EntityFrameworkCore.InMemory")
+                // Verificar de manera más robusta si es InMemory database
+                var isInMemoryDb = _db.Database.ProviderName?.Contains("InMemory") == true;
+
+                if (!isInMemoryDb)
                 {
-                    await _db.Database.ExecuteSqlRawAsync("ALTER TABLE SESSIONS AUTO_INCREMENT = 1");
-                    await _db.Database.ExecuteSqlRawAsync("ALTER TABLE PREFERENCES AUTO_INCREMENT = 1");
-                    await _db.Database.ExecuteSqlRawAsync("ALTER TABLE USERS AUTO_INCREMENT = 1");
+                    try
+                    {
+                        await _db.Database.ExecuteSqlRawAsync("ALTER TABLE SESSIONS AUTO_INCREMENT = 1");
+                        await _db.Database.ExecuteSqlRawAsync("ALTER TABLE PREFERENCES AUTO_INCREMENT = 1");
+                        await _db.Database.ExecuteSqlRawAsync("ALTER TABLE USERS AUTO_INCREMENT = 1");
+                    }
+                    catch (Exception)
+                    {
+                        // Ignorar errores de ALTER TABLE en caso de bases de datos que no soporten AUTO_INCREMENT
+                        // Esto no debe afectar la funcionalidad principal de eliminación de datos
+                    }
                 }
 
                 return true;
