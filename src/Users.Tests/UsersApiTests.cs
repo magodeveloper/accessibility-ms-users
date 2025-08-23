@@ -4,14 +4,15 @@ using System.Net;
 using System.Text.Json;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Users.Tests.Infrastructure;
 
 namespace Users.Tests
 {
-    public class UsersApiTests : IClassFixture<WebApplicationFactory<Users.Api.Program>>
+    public class UsersApiTests : IClassFixture<TestWebApplicationFactory<Users.Api.Program>>
     {
-        private readonly WebApplicationFactory<Users.Api.Program> _factory;
+        private readonly TestWebApplicationFactory<Users.Api.Program> _factory;
 
-        public UsersApiTests(WebApplicationFactory<Users.Api.Program> factory)
+        public UsersApiTests(TestWebApplicationFactory<Users.Api.Program> factory)
         {
             _factory = factory;
         }

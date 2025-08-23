@@ -54,11 +54,24 @@ builder.Services.AddControllers() // Controladores
 
 var app = builder.Build(); // Construcción de la aplicación
 
-// Migración automática de la base de datos al iniciar la API
-using (var scope = app.Services.CreateScope())
+// Migración automática de la base de datos al iniciar la API - solo en producción/desarrollo
+var environment = app.Environment.EnvironmentName;
+if (environment != "TestEnvironment")
 {
-    var db = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
-    await db.Database.MigrateAsync();
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
+        await db.Database.MigrateAsync();
+    }
+}
+else
+{
+    // Para tests, solo asegurar que la base de datos se cree
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
+        await db.Database.EnsureCreatedAsync();
+    }
 }
 
 var supportedCultures = new[] { "es", "en" };

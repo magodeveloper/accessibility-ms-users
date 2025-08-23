@@ -95,20 +95,38 @@ namespace Users.Application.Services.User
         {
             try
             {
-                // Eliminar en orden correcto debido a las FK constraints
+                // Usar Entity Framework en lugar de SQL directo para compatibilidad con InMemory DB
+
                 // 1. Eliminar sessions
-                await _db.Database.ExecuteSqlRawAsync("DELETE FROM SESSIONS");
+                var sessions = await _db.Sessions.ToListAsync();
+                if (sessions.Any())
+                {
+                    _db.Sessions.RemoveRange(sessions);
+                }
 
                 // 2. Eliminar preferences
-                await _db.Database.ExecuteSqlRawAsync("DELETE FROM PREFERENCES");
+                var preferences = await _db.Preferences.ToListAsync();
+                if (preferences.Any())
+                {
+                    _db.Preferences.RemoveRange(preferences);
+                }
 
                 // 3. Eliminar users
-                await _db.Database.ExecuteSqlRawAsync("DELETE FROM USERS");
+                var users = await _db.Users.ToListAsync();
+                if (users.Any())
+                {
+                    _db.Users.RemoveRange(users);
+                }
 
-                // Reset auto increment IDs (opcional)
-                await _db.Database.ExecuteSqlRawAsync("ALTER TABLE SESSIONS AUTO_INCREMENT = 1");
-                await _db.Database.ExecuteSqlRawAsync("ALTER TABLE PREFERENCES AUTO_INCREMENT = 1");
-                await _db.Database.ExecuteSqlRawAsync("ALTER TABLE USERS AUTO_INCREMENT = 1");
+                await _db.SaveChangesAsync();
+
+                // Reset auto increment IDs solo para bases de datos relacionales (no InMemory)
+                if (_db.Database.ProviderName != "Microsoft.EntityFrameworkCore.InMemory")
+                {
+                    await _db.Database.ExecuteSqlRawAsync("ALTER TABLE SESSIONS AUTO_INCREMENT = 1");
+                    await _db.Database.ExecuteSqlRawAsync("ALTER TABLE PREFERENCES AUTO_INCREMENT = 1");
+                    await _db.Database.ExecuteSqlRawAsync("ALTER TABLE USERS AUTO_INCREMENT = 1");
+                }
 
                 return true;
             }
