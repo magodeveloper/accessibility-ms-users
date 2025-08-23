@@ -119,3 +119,12 @@ Content-Type: {{json}}
   "reportFormat": "json",
   "fontSize": 16
 }
+
+################################################################################
+# ADMINISTRACIÓN
+################################################################################
+
+### ELIMINAR TODOS LOS DATOS (USERS, PREFERENCES, SESSIONS)
+### CUIDADO: Esta operación es IRREVERSIBLE y borra toda la base de datos
+### Solo usar en entornos de desarrollo o testing
+DELETE {{Users_Api_HostAddress}}/api/v1/users/all-data

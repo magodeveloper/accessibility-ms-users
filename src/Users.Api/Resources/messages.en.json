@@ -13,6 +13,7 @@
   "Error_PreferencesUnauthorized": "You do not have permission to modify these preferences.",
   "Error_PreferencesNotFound": "Preferences not found.",
   "Error_InternalServer": "An unexpected internal error has occurred.",
+  "Error_DeleteAllData": "Error deleting all data. Operation cancelled.",
   "Success_UserCreated": "User created successfully.",
   "Success_UserFound": "User found.",
   "Success_UserUpdated": "User updated successfully.",
@@ -30,5 +31,6 @@
   "Success_UserAndPreferencesCreated": "User and preferences created successfully.",
   "Success_Logout": "Logout successful. All sessions have been deleted and last login has been reset.",
   "Success_PreferencesDeleted": "Preferences deleted successfully.",
-  "Success_UserAndPreferencesUpdated": "User and preferences updated successfully."
+  "Success_UserAndPreferencesUpdated": "User and preferences updated successfully.",
+  "Success_AllDataDeleted": "All data (users, preferences and sessions) deleted successfully. Database is now clean."
 }

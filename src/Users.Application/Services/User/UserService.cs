@@ -90,5 +90,32 @@ namespace Users.Application.Services.User
             await _db.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> DeleteAllDataAsync()
+        {
+            try
+            {
+                // Eliminar en orden correcto debido a las FK constraints
+                // 1. Eliminar sessions
+                await _db.Database.ExecuteSqlRawAsync("DELETE FROM SESSIONS");
+
+                // 2. Eliminar preferences
+                await _db.Database.ExecuteSqlRawAsync("DELETE FROM PREFERENCES");
+
+                // 3. Eliminar users
+                await _db.Database.ExecuteSqlRawAsync("DELETE FROM USERS");
+
+                // Reset auto increment IDs (opcional)
+                await _db.Database.ExecuteSqlRawAsync("ALTER TABLE SESSIONS AUTO_INCREMENT = 1");
+                await _db.Database.ExecuteSqlRawAsync("ALTER TABLE PREFERENCES AUTO_INCREMENT = 1");
+                await _db.Database.ExecuteSqlRawAsync("ALTER TABLE USERS AUTO_INCREMENT = 1");
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
     }
 }

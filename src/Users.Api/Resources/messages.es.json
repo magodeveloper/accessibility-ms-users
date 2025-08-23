@@ -12,7 +12,8 @@
   "Error_PreferencesDelete": "No se pudo eliminar las preferencias.",
   "Error_PreferencesUnauthorized": "No tienes permisos para modificar estas preferencias.",
   "Error_PreferencesNotFound": "Preferencias no encontradas.",
-  "Error_InternalServer": "Ha ocurrido un error interno inesperado.",
+  "Error_InternalServer": "Ha ocurrido un error internal inesperado.",
+  "Error_DeleteAllData": "Error al eliminar todos los datos. Operación cancelada.",
   "Success_UserCreated": "Usuario creado exitosamente.",
   "Success_UserFound": "Usuario encontrado.",
   "Success_UserUpdated": "Usuario actualizado exitosamente.",
@@ -30,5 +31,6 @@
   "Success_UserAndPreferencesCreated": "Usuario y preferencias creados exitosamente.",
   "Success_Logout": "Logout exitoso. Todas las sesiones han sido eliminadas y el último acceso ha sido reiniciado.",
   "Success_PreferencesDeleted": "Preferencias eliminadas exitosamente.",
-  "Success_UserAndPreferencesUpdated": "Usuario y preferencias actualizados exitosamente."
+  "Success_UserAndPreferencesUpdated": "Usuario y preferencias actualizados exitosamente.",
+  "Success_AllDataDeleted": "Todos los datos (usuarios, preferencias y sesiones) han sido eliminados exitosamente. Base de datos limpia."
 }

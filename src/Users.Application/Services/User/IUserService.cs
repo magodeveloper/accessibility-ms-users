@@ -11,5 +11,6 @@ namespace Users.Application.Services.User
         Task<Users.Domain.Entities.User?> UpdateUserAsync(Users.Domain.Entities.User user);
         Task<bool> DeleteUserAsync(int id);
         Task<Users.Domain.Entities.User?> AuthenticateAsync(string email, string password);
+        Task<bool> DeleteAllDataAsync();
     }
 }

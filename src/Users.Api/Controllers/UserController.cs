@@ -133,5 +133,24 @@ namespace Users.Api.Controllers
             if (!deleted) return NotFound(new { error = Localization.Get("Error_UserNotFound", lang) });
             return Ok(new { message = Localization.Get("Success_UserDeleted", lang) });
         }
+
+        // DELETE: api/v1/users/all-data
+        /// <summary>
+        /// Elimina TODOS los registros de las tablas USERS, PREFERENCES y SESSIONS.
+        /// CUIDADO: Esta operación es irreversible y eliminará toda la información.
+        /// </summary>
+        /// <response code="200">Todos los datos eliminados exitosamente</response>
+        /// <response code="500">Error al eliminar los datos</response>
+        [HttpDelete("all-data")]
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> DeleteAllData()
+        {
+            var lang = LanguageHelper.GetRequestLanguage(Request);
+            var deleted = await _userService.DeleteAllDataAsync();
+            if (!deleted)
+                return StatusCode(500, new { error = Localization.Get("Error_DeleteAllData", lang) });
+            return Ok(new { message = Localization.Get("Success_AllDataDeleted", lang) });
+        }
     }
 }

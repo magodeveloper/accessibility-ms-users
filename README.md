@@ -9,6 +9,7 @@ Microservicio de gestión de usuarios y preferencias de accesibilidad, desarroll
 - El campo `wcagVersion` es siempre string (no enum).
 - El endpoint de login retorna el usuario y sus preferencias asociadas.
 - Nuevo endpoint: `DELETE /api/v1/sessions/by-user/{userId}` para eliminar todas las sesiones de un usuario.
+- **🆕 Nuevo endpoint CRÍTICO: `DELETE /api/v1/users/all-data`** para eliminar TODOS los registros de usuarios, preferencias y sesiones.
 - Rutas desambiguadas y robustas.
 - Pruebas de integración completas y actualizadas.
 
@@ -16,6 +17,7 @@ Microservicio de gestión de usuarios y preferencias de accesibilidad, desarroll
 
 - API RESTful para gestión de usuarios, sesiones y preferencias de accesibilidad.
 - Endpoints para registro, login, actualización y eliminación de usuarios por email.
+- **Método de limpieza total**: Endpoint para eliminar todos los datos (desarrollo y testing).
 - Gestión de preferencias WCAG (como string), idioma, tema visual, formato de reporte, notificaciones y nivel de respuesta AI.
 - Respuestas internacionalizadas (i18n) y manejo global de errores. El idioma se detecta automáticamente por la cabecera `Accept-Language`.
 - Uso de DTOs para todas las respuestas (sin ciclos de entidades).
@@ -114,6 +116,10 @@ Esto generará la imagen con ese nombre y etiqueta.
   ```sh
   docker image prune
   ```
+- **Limpiar base de datos (desarrollo/testing)**:
+  ```sh
+  curl -X DELETE http://localhost:8081/api/v1/users/all-data
+  ```
 
 ---
 
@@ -135,6 +141,8 @@ Esto generará la imagen con ese nombre y etiqueta.
   Crea preferencias para un usuario existente.
 - `PATCH  /api/v1/preferences/{id}`  
   Actualiza parcialmente las preferencias.
+- **⚠️ `DELETE /api/v1/users/all-data`**  
+  **ELIMINA TODOS los registros de usuarios, preferencias y sesiones (IRREVERSIBLE)**.
 
 > Consulta la documentación Swagger en `/swagger` cuando la API esté corriendo en modo desarrollo.
 
@@ -281,6 +289,55 @@ Solicita o realiza reseteo de contraseña.
 }
 ```
 
+### ⚠️ DELETE /api/v1/users/all-data
+
+**OPERACIÓN CRÍTICA**: Elimina TODOS los registros de las tablas `USERS`, `PREFERENCES` y `SESSIONS`.
+
+> **ADVERTENCIA**: Esta operación es **IRREVERSIBLE** y borra toda la información de la base de datos.
+
+**Sin parámetros requeridos**
+
+**Respuesta 200 (Éxito):**
+
+```json
+{
+  "message": "Todos los datos (usuarios, preferencias y sesiones) han sido eliminados exitosamente. Base de datos limpia."
+}
+```
+
+**Respuesta 500 (Error):**
+
+```json
+{
+  "error": "Error al eliminar todos los datos. Operación cancelada."
+}
+```
+
+#### Orden de eliminación:
+
+1. **SESSIONS** (elimina dependencias de usuarios)
+2. **PREFERENCES** (elimina dependencias de usuarios)
+3. **USERS** (tabla principal)
+4. **Reset AUTO_INCREMENT** (resetea IDs a 1)
+
+#### Casos de uso recomendados:
+
+✅ **Entornos de desarrollo** - Limpiar datos de prueba  
+✅ **Testing automatizado** - Reset de base de datos entre tests  
+✅ **Demos y talleres** - Volver a estado inicial
+
+❌ **Entornos de producción** - NO recomendado sin medidas adicionales
+
+#### Ejemplo de uso:
+
+```bash
+# cURL
+curl -X DELETE http://localhost:8081/api/v1/users/all-data
+
+# PowerShell
+Invoke-RestMethod -Uri "http://localhost:8081/api/v1/users/all-data" -Method Delete
+```
+
 ## Autenticación y manejo de errores
 
 ### Ejemplos de errores
@@ -353,7 +410,10 @@ Las pruebas cubren:
 - Registro y login de usuario (incluyendo preferencias)
 - CRUD de usuarios y preferencias
 - CRUD de sesiones (incluyendo borrado por usuario)
+- **Eliminación masiva de todos los datos** (DELETE /api/v1/users/all-data)
 - Validación de errores y respuestas internacionalizadas
+
+**Resultado esperado**: `6/6 tests passing`
 
 ## Notas adicionales
 
@@ -362,7 +422,17 @@ Las pruebas cubren:
 - Todas las respuestas usan DTOs para evitar ciclos y exponer solo los datos necesarios.
 - El endpoint de login retorna el usuario y sus preferencias asociadas.
 - El endpoint para eliminar sesiones por usuario es `/api/v1/sessions/by-user/{userId}`.
+- **⚠️ NUEVO**: Endpoint `/api/v1/users/all-data` para eliminación masiva (usar con precaución).
 - El proyecto está listo para CI/CD y despliegue en Docker.
 - Si usas frontend, asegúrate de configurar correctamente CORS en el backend.
+
+### Consideraciones de seguridad para producción
+
+Si planeas usar el endpoint `DELETE /api/v1/users/all-data` en producción, considera:
+
+- Implementar autenticación y autorización (roles específicos)
+- Agregar confirmación doble (headers especiales)
+- Implementar logging de auditoría
+- Crear respaldos automáticos antes de la eliminación
 
 ---
