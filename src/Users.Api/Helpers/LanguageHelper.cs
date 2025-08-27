@@ -6,8 +6,19 @@ namespace Users.Api.Helpers
     {
         public static string GetRequestLanguage(HttpRequest request)
         {
-            var lang = request.Headers["Accept-Language"].FirstOrDefault()?.Split(',')[0]?.Substring(0, 2);
-            return string.IsNullOrWhiteSpace(lang) ? "es" : lang;
+            try
+            {
+                var header = request.Headers["Accept-Language"].FirstOrDefault();
+                if (string.IsNullOrWhiteSpace(header)) return "es";
+                var token = header.Split(',')[0].Trim();
+                if (token.Length < 2) return "es";
+                var lang2 = token[..2].ToLowerInvariant();
+                return lang2 is "es" or "en" ? lang2 : "es";
+            }
+            catch
+            {
+                return "es";
+            }
         }
     }
 }
