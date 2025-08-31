@@ -33,7 +33,7 @@ Microservicio de gestión de usuarios y preferencias de accesibilidad, desarroll
 accessibility-ms-users/
 ├── 📄 docker-compose.yml        # Orquestación de servicios (API + MySQL)
 ├── 🐳 Dockerfile               # Imagen de contenedor de la API
-├── ⚙️  .env.development        # Variables de entorno para desarrollo  
+├── ⚙️  .env.development        # Variables de entorno para desarrollo
 ├── ⚙️  .env.production         # Variables de entorno para producción
 ├── 📋 README.md                # Documentación completa del proyecto
 ├── 🧪 init-test-databases.ps1  # Script de inicialización de BD de test (Windows)
@@ -49,7 +49,7 @@ accessibility-ms-users/
 │   ├── 🏛️  Users.Domain/       # Entidades y enums de dominio
 │   │   ├── Entities/         # User, Preference, Session
 │   │   └── Enums/            # Enumeraciones del dominio
-│   ├── 🔧 Users.Infrastructure/# DbContext y servicios de infraestructura  
+│   ├── 🔧 Users.Infrastructure/# DbContext y servicios de infraestructura
 │   │   ├── Data/             # ApplicationDbContext
 │   │   └── Services/         # Servicios de infraestructura
 │   └── 🧪 Users.Tests/         # Pruebas de integración (6 tests)
@@ -168,17 +168,17 @@ Esto generará la imagen con ese nombre y etiqueta.
 
 ### 📋 Resumen de endpoints
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `POST` | `/api/users-with-preferences` | Crea usuario y preferencias en una llamada |
-| `DELETE` | `/api/users/by-email/{email}` | Elimina usuario y preferencias por email |
-| `POST` | `/api/auth/login` | Login con retorno de usuario y preferencias |
-| `POST` | `/api/auth/logout` | Cierra sesión del usuario |
-| `DELETE` | `/api/sessions/by-user/{userId}` | Elimina todas las sesiones de un usuario |
-| `GET` | `/api/preferences/by-user/{email}` | Obtiene preferencias por email de usuario |
-| `POST` | `/api/preferences` | Crea preferencias para usuario existente |
-| `PATCH` | `/api/preferences/{id}` | Actualiza parcialmente las preferencias |
-| ⚠️ `DELETE` | `/api/users/all-data` | **ELIMINA TODOS los datos** (IRREVERSIBLE) |
+| Método      | Endpoint                           | Descripción                                 |
+| ----------- | ---------------------------------- | ------------------------------------------- |
+| `POST`      | `/api/users-with-preferences`      | Crea usuario y preferencias en una llamada  |
+| `DELETE`    | `/api/users/by-email/{email}`      | Elimina usuario y preferencias por email    |
+| `POST`      | `/api/auth/login`                  | Login con retorno de usuario y preferencias |
+| `POST`      | `/api/auth/logout`                 | Cierra sesión del usuario                   |
+| `DELETE`    | `/api/sessions/by-user/{userId}`   | Elimina todas las sesiones de un usuario    |
+| `GET`       | `/api/preferences/by-user/{email}` | Obtiene preferencias por email de usuario   |
+| `POST`      | `/api/preferences`                 | Crea preferencias para usuario existente    |
+| `PATCH`     | `/api/preferences/{id}`            | Actualiza parcialmente las preferencias     |
+| ⚠️ `DELETE` | `/api/users/all-data`              | **ELIMINA TODOS los datos** (IRREVERSIBLE)  |
 
 > 📚 **Documentación completa**: Consulta Swagger en `/swagger` cuando la API esté corriendo en modo desarrollo.
 
@@ -242,6 +242,7 @@ Esto generará la imagen con ese nombre y etiqueta.
 **URL**: `DELETE /api/users/by-email/{email}`
 
 **Parámetros**:
+
 - `email` (string): Email del usuario a eliminar
 
 **Respuesta 200:**
@@ -255,8 +256,9 @@ Esto generará la imagen con ese nombre y etiqueta.
 ### 🔑 POST /api/auth/login
 
 **Descripción**: Autenticación de usuario que retorna:
+
 - Token de sesión JWT
-- Información del usuario autenticado  
+- Información del usuario autenticado
 - Preferencias asociadas
 
 **URL**: `POST /api/auth/login`
@@ -308,6 +310,7 @@ Esto generará la imagen con ese nombre y etiqueta.
 **URL**: `DELETE /api/sessions/by-user/{userId}`
 
 **Parámetros**:
+
 - `userId` (int): ID del usuario
 
 **Respuesta 200:**
@@ -398,6 +401,7 @@ Invoke-RestMethod -Uri "http://localhost:8081/api/users/all-data" -Method Delete
 La API detecta automáticamente el idioma preferido del cliente a través de la cabecera `Accept-Language` y responde en el idioma correspondiente.
 
 **Idiomas soportados:**
+
 - 🇪🇸 Español (es)
 - 🇺🇸 Inglés (en)
 
@@ -474,14 +478,14 @@ dotnet test --configuration Release --verbosity normal
 
 ### 🎯 Cobertura de pruebas
 
-| Endpoint | Test | Estado |
-|----------|------|--------|
-| `POST /api/users-with-preferences` | ✅ Creación de usuario con preferencias | Passing |
-| `DELETE /api/users/by-email/{email}` | ✅ Eliminación por email | Passing |
-| `POST /api/auth/login` | ✅ Login y obtención de datos | Passing |  
-| `POST /api/preferences` | ✅ Conflicto en creación duplicada | Passing |
-| `GET /api/preferences/by-user/{email}` | ✅ Obtención de preferencias | Passing |
-| `DELETE /api/users/all-data` | ✅ Limpieza completa de datos | Passing |
+| Endpoint                               | Test                                    | Estado  |
+| -------------------------------------- | --------------------------------------- | ------- |
+| `POST /api/users-with-preferences`     | ✅ Creación de usuario con preferencias | Passing |
+| `DELETE /api/users/by-email/{email}`   | ✅ Eliminación por email                | Passing |
+| `POST /api/auth/login`                 | ✅ Login y obtención de datos           | Passing |
+| `POST /api/preferences`                | ✅ Conflicto en creación duplicada      | Passing |
+| `GET /api/preferences/by-user/{email}` | ✅ Obtención de preferencias            | Passing |
+| `DELETE /api/users/all-data`           | ✅ Limpieza completa de datos           | Passing |
 
 ### 🏗️ Infraestructura de testing
 
@@ -534,11 +538,12 @@ Las pruebas cubren:
 Este proyecto está optimizado para integrarse fácilmente en pipelines de CI/CD:
 
 #### 🛠️ Build y test automáticos
+
 ```yaml
 # Ejemplo GitHub Actions
 - name: Build
   run: dotnet build --configuration Release
-- name: Test  
+- name: Test
   run: dotnet test --configuration Release --verbosity normal
 - name: Docker Build
   run: docker build -t msusers-api:latest .
@@ -547,11 +552,13 @@ Este proyecto está optimizado para integrarse fácilmente en pipelines de CI/CD
 ```
 
 #### 🐳 Despliegue con Docker
+
 - **Dockerfile**: Imagen optimizada multi-stage con .NET 9
 - **docker-compose.yml**: Orquestación completa con MySQL
 - **Variables de entorno**: Separación clara entre entornos
 
 #### ✅ Validación automática
+
 - **6/6 tests passing**: Suite completa de pruebas de integración
 - **Build exitoso**: Compilación sin warnings en Release
 - **Docker ready**: Contenedores listos para cualquier orquestador
@@ -613,4 +620,5 @@ Si planeas usar el endpoint `DELETE /api/users/all-data` en producción:
 > ✨ **Calidad**: 100% de tests pasando, sin warnings de compilación.
 
 ---
-*Microservicio desarrollado con .NET 9, Entity Framework Core y MySQL. Parte del ecosistema de accesibilidad digital.*
+
+_Microservicio desarrollado con .NET 9, Entity Framework Core y MySQL. Parte del ecosistema de accesibilidad digital._

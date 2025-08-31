@@ -22,7 +22,7 @@ namespace Users.Tests.Infrastructure
                     ["ASPNETCORE_ENVIRONMENT"] = "TestEnvironment",
                     ["Environment"] = "TestEnvironment"
                 });
-                
+
                 // Agregar configuración de test específica
                 config.AddJsonFile("appsettings.Test.json", optional: true);
             });
@@ -30,10 +30,10 @@ namespace Users.Tests.Infrastructure
             builder.ConfigureServices(services =>
             {
                 // Buscar y remover TODOS los DbContext relacionados
-                var descriptors = services.Where(d => d.ServiceType.Name.Contains("DbContext") || 
+                var descriptors = services.Where(d => d.ServiceType.Name.Contains("DbContext") ||
                                                      d.ServiceType == typeof(DbContextOptions<UsersDbContext>) ||
                                                      d.ServiceType == typeof(UsersDbContext)).ToList();
-                
+
                 foreach (var descriptor in descriptors)
                 {
                     services.Remove(descriptor);
