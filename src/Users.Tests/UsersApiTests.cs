@@ -25,13 +25,13 @@ namespace Users.Tests
             var email = "testauth@email.com";
             var password = "TestAuth123!";
             var dto = new { nickname = "testauth", name = "Test", lastname = "Auth", email, password };
-            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
-            await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
-            var loginResp = await client.PostAsJsonAsync("/api/v1/auth/login", new { email, password });
+            await client.DeleteAsync($"/api/users/by-email/{email}");
+            await client.PostAsJsonAsync("/api/users-with-preferences", dto);
+            var loginResp = await client.PostAsJsonAsync("/api/auth/login", new { email, password });
             Assert.Equal(HttpStatusCode.OK, loginResp.StatusCode);
             var loginData = await loginResp.Content.ReadFromJsonAsync<JsonElement>();
             Assert.True(loginData.TryGetProperty("token", out _));
-            var logoutResp = await client.PostAsJsonAsync("/api/v1/auth/logout", new { email });
+            var logoutResp = await client.PostAsJsonAsync("/api/auth/logout", new { email });
             Assert.Equal(HttpStatusCode.OK, logoutResp.StatusCode);
         }
 
@@ -43,14 +43,14 @@ namespace Users.Tests
             var email = "usercrud@email.com";
             var password = "UserCrud123!";
             var dto = new { nickname = "usercrud", name = "User", lastname = "Crud", email, password };
-            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
-            var createResp = await client.PostAsJsonAsync("/api/v1/users", dto);
+            await client.DeleteAsync($"/api/users/by-email/{email}");
+            var createResp = await client.PostAsJsonAsync("/api/users", dto);
             Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
-            var getResp = await client.GetAsync($"/api/v1/users/by-email?email={email}");
+            var getResp = await client.GetAsync($"/api/users/by-email?email={email}");
             Assert.Equal(HttpStatusCode.OK, getResp.StatusCode);
-            var delResp = await client.DeleteAsync($"/api/v1/users/by-email/{email}");
+            var delResp = await client.DeleteAsync($"/api/users/by-email/{email}");
             Assert.Equal(HttpStatusCode.OK, delResp.StatusCode);
-            var getAfterDel = await client.GetAsync($"/api/v1/users/by-email?email={email}");
+            var getAfterDel = await client.GetAsync($"/api/users/by-email?email={email}");
             Assert.Equal(HttpStatusCode.NotFound, getAfterDel.StatusCode);
         }
 
@@ -61,9 +61,9 @@ namespace Users.Tests
             var client = _factory.CreateClient();
             var email = "uwp@email.com";
             var password = "UwpTest123!";
-            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
+            await client.DeleteAsync($"/api/users/by-email/{email}");
             var dto = new { nickname = "uwp", name = "UWP", lastname = "Test", email, password };
-            var resp = await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
+            var resp = await client.PostAsJsonAsync("/api/users-with-preferences", dto);
             Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
         }
 
@@ -74,9 +74,9 @@ namespace Users.Tests
             var client = _factory.CreateClient();
             var email = "pref@email.com";
             var password = "PrefTest123!";
-            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
+            await client.DeleteAsync($"/api/users/by-email/{email}");
             var userDto = new { nickname = "pref", name = "Pref", lastname = "Test", email, password };
-            var createUserResp = await client.PostAsJsonAsync("/api/v1/users-with-preferences", userDto);
+            var createUserResp = await client.PostAsJsonAsync("/api/users-with-preferences", userDto);
             // Obtener el userId del usuario creado
             int userId = 0;
             if (createUserResp.StatusCode == HttpStatusCode.Created)
@@ -85,11 +85,11 @@ namespace Users.Tests
                 if (json.TryGetProperty("user", out var userObj) && userObj.TryGetProperty("id", out var idProp))
                     userId = idProp.GetInt32();
             }
-            var getPrefResp = await client.GetAsync($"/api/v1/preferences/by-user/{email}");
+            var getPrefResp = await client.GetAsync($"/api/preferences/by-user/{email}");
             Assert.True(getPrefResp.StatusCode == HttpStatusCode.OK || getPrefResp.StatusCode == HttpStatusCode.NotFound);
             var prefDto = new { userId, wcagVersion = "2.1", wcagLevel = "AA", language = "es", visualTheme = "light", reportFormat = "pdf", notificationsEnabled = true, aiResponseLevel = "intermediate", fontSize = 14 };
             // No se puede crear preferencia si ya existe, pero se prueba el endpoint
-            var createPrefResp = await client.PostAsJsonAsync("/api/v1/preferences", prefDto);
+            var createPrefResp = await client.PostAsJsonAsync("/api/preferences", prefDto);
             Assert.True(createPrefResp.StatusCode == HttpStatusCode.Created || createPrefResp.StatusCode == HttpStatusCode.Conflict);
         }
 
@@ -100,21 +100,21 @@ namespace Users.Tests
             var client = _factory.CreateClient();
             var email = "session@email.com";
             var password = "SessionTest123!";
-            await client.DeleteAsync($"/api/v1/users/by-email/{email}");
+            await client.DeleteAsync($"/api/users/by-email/{email}");
             var dto = new { nickname = "session", name = "Session", lastname = "Test", email, password };
-            await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto);
-            var loginResp = await client.PostAsJsonAsync("/api/v1/auth/login", new { email, password });
+            await client.PostAsJsonAsync("/api/users-with-preferences", dto);
+            var loginResp = await client.PostAsJsonAsync("/api/auth/login", new { email, password });
             Assert.Equal(HttpStatusCode.OK, loginResp.StatusCode);
             var loginData = await loginResp.Content.ReadFromJsonAsync<JsonElement>();
             var userId = loginData.GetProperty("user").GetProperty("id").GetInt32();
             // GET sesiones por usuario
-            var getByUserResp = await client.GetAsync($"/api/v1/sessions/user/{userId}");
+            var getByUserResp = await client.GetAsync($"/api/sessions/user/{userId}");
             Assert.True(getByUserResp.StatusCode == HttpStatusCode.OK || getByUserResp.StatusCode == HttpStatusCode.NotFound);
             // GET todas las sesiones
-            var getAllResp = await client.GetAsync($"/api/v1/sessions");
+            var getAllResp = await client.GetAsync($"/api/sessions");
             Assert.Equal(HttpStatusCode.OK, getAllResp.StatusCode);
             // DELETE todas las sesiones del usuario
-            var delByUserResp = await client.DeleteAsync($"/api/v1/sessions/by-user/{userId}");
+            var delByUserResp = await client.DeleteAsync($"/api/sessions/by-user/{userId}");
             Assert.True(delByUserResp.StatusCode == HttpStatusCode.OK || delByUserResp.StatusCode == HttpStatusCode.NotFound);
         }
 
@@ -133,30 +133,30 @@ namespace Users.Tests
             var dto2 = new { nickname = "delall2", name = "Delete", lastname = "All2", email = email2, password };
 
             // Limpiar datos previos
-            await client.DeleteAsync($"/api/v1/users/by-email/{email1}");
-            await client.DeleteAsync($"/api/v1/users/by-email/{email2}");
+            await client.DeleteAsync($"/api/users/by-email/{email1}");
+            await client.DeleteAsync($"/api/users/by-email/{email2}");
 
             // Crear usuarios con preferencias
-            var createResp1 = await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto1);
-            var createResp2 = await client.PostAsJsonAsync("/api/v1/users-with-preferences", dto2);
+            var createResp1 = await client.PostAsJsonAsync("/api/users-with-preferences", dto1);
+            var createResp2 = await client.PostAsJsonAsync("/api/users-with-preferences", dto2);
 
             Assert.Equal(HttpStatusCode.Created, createResp1.StatusCode);
             Assert.Equal(HttpStatusCode.Created, createResp2.StatusCode);
 
             // Crear sesiones mediante login
-            await client.PostAsJsonAsync("/api/v1/auth/login", new { email = email1, password });
-            await client.PostAsJsonAsync("/api/v1/auth/login", new { email = email2, password });
+            await client.PostAsJsonAsync("/api/auth/login", new { email = email1, password });
+            await client.PostAsJsonAsync("/api/auth/login", new { email = email2, password });
 
             // Verificar que existen usuarios antes de eliminar
-            var getUsersBefore = await client.GetAsync("/api/v1/users");
+            var getUsersBefore = await client.GetAsync("/api/users");
             Assert.Equal(HttpStatusCode.OK, getUsersBefore.StatusCode);
 
             // Ejecutar eliminación de todos los datos
-            var deleteAllResp = await client.DeleteAsync("/api/v1/users/all-data");
+            var deleteAllResp = await client.DeleteAsync("/api/users/all-data");
             Assert.Equal(HttpStatusCode.OK, deleteAllResp.StatusCode);
 
             // Verificar que no existen usuarios después de eliminar
-            var getUsersAfter = await client.GetAsync("/api/v1/users");
+            var getUsersAfter = await client.GetAsync("/api/users");
             Assert.Equal(HttpStatusCode.OK, getUsersAfter.StatusCode);
 
             var usersData = await getUsersAfter.Content.ReadFromJsonAsync<JsonElement>();
@@ -164,7 +164,7 @@ namespace Users.Tests
             Assert.Equal(0, usersArray.GetArrayLength());
 
             // Verificar que tampoco existen sesiones
-            var getSessionsAfter = await client.GetAsync("/api/v1/sessions");
+            var getSessionsAfter = await client.GetAsync("/api/sessions");
             Assert.Equal(HttpStatusCode.OK, getSessionsAfter.StatusCode);
         }
     }

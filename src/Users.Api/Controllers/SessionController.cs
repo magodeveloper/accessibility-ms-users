@@ -8,7 +8,7 @@ using Users.Application.Services.Session;
 namespace Users.Api.Controllers
 {
     [ApiController]
-    [Route("api/v1/sessions")]
+    [Route("api/sessions")]
     public class SessionController : ControllerBase
     {
         private readonly ISessionService _sessionService;
@@ -16,7 +16,7 @@ namespace Users.Api.Controllers
         {
             _sessionService = sessionService;
         }
-        // GET: api/v1/sessions/user/{userId}
+        // GET: api/sessions/user/{userId}
         /// <summary>
         /// Obtiene todas las sesiones por UserId.
         /// </summary>
@@ -33,7 +33,7 @@ namespace Users.Api.Controllers
                 return NotFound(new { error = Localization.Get("Error_SessionNotFound", lang) });
             return Ok(new { sessions = sessionDtos, message = Localization.Get("Success_SessionFound", lang) });
         }
-        // GET: api/v1/sessions
+        // GET: api/sessions
         /// <summary>
         /// Lista todas las sesiones.
         /// </summary>
@@ -46,7 +46,7 @@ namespace Users.Api.Controllers
             var sessionDtos = await _sessionService.GetAllSessionsAsync();
             return Ok(new { sessions = sessionDtos, message = Localization.Get("Success_SessionFound", lang) });
         }
-        // DELETE: api/v1/sessions/{id}
+        // DELETE: api/sessions/{id}
         /// <summary>
         /// Elimina una sesión por Id.
         /// </summary>

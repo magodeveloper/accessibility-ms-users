@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Users.Api.Controllers
 {
     [ApiController]
-    [Route("api/v1/users-with-preferences")]
+    [Route("api/users-with-preferences")]
     public class UsersWithPreferencesController : ControllerBase
     {
         private static void UpdateUserFields(User user, PreferenceUserPatchDto patchDto, IPasswordService passwordService)
@@ -128,7 +128,7 @@ namespace Users.Api.Controllers
                     pref.FontSize
                 }
             };
-            return Created($"/api/v1/users-with-preferences/{user.Id}", new { result.user, result.preferences, message = Localization.Get("Success_UserAndPreferencesCreated", lang) });
+            return Created($"/api/users-with-preferences/{user.Id}", new { result.user, result.preferences, message = Localization.Get("Success_UserAndPreferencesCreated", lang) });
         }
         /// <summary>
         /// Actualiza parcialmente los datos del usuario y/o sus preferencias.

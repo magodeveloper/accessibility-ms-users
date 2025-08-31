@@ -8,7 +8,7 @@ using Users.Application.Services.User;
 namespace Users.Api.Controllers
 {
     [ApiController]
-    [Route("api/v1/users")]
+    [Route("api/users")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -16,7 +16,7 @@ namespace Users.Api.Controllers
         {
             _userService = userService;
         }
-        // GET: api/v1/users/by-email?email={email}
+        // GET: api/users/by-email?email={email}
         [HttpGet("by-email")]
         /// <summary>
         /// Obtiene un usuario por su email.
@@ -34,7 +34,7 @@ namespace Users.Api.Controllers
             var dto = new Users.Application.Dtos.UserReadDto(user.Id, user.Nickname, user.Name, user.Lastname, user.Email, user.Role.ToString(), user.Status.ToString(), user.EmailConfirmed, user.LastLogin, user.RegistrationDate, user.CreatedAt, user.UpdatedAt);
             return Ok(new { user = dto, message = Localization.Get("Success_UserFound", lang) });
         }
-        // DELETE: api/v1/users/by-email/{email}
+        // DELETE: api/users/by-email/{email}
         [HttpDelete("by-email/{email}")]
         /// <summary>
         /// Elimina un usuario por su email.
@@ -53,7 +53,7 @@ namespace Users.Api.Controllers
             if (!deleted) return NotFound(new { error = Localization.Get("Error_UserNotFound", lang) });
             return Ok(new { message = Localization.Get("Success_UserDeleted", lang) });
         }
-        // POST: api/v1/users
+        // POST: api/users
         /// <summary>
         /// Crea un nuevo usuario en el sistema.
         /// </summary>
@@ -76,7 +76,7 @@ namespace Users.Api.Controllers
                     Password = dto.Password // El servicio se encarga de hashear
                 };
                 var created = await _userService.CreateUserAsync(user);
-                return Created($"/api/v1/user/{created.Id}", new { created.Id, message = Localization.Get("Success_UserCreated", lang) });
+                return Created($"/api/user/{created.Id}", new { created.Id, message = Localization.Get("Success_UserCreated", lang) });
             }
             catch (InvalidOperationException ex)
             {
@@ -85,7 +85,7 @@ namespace Users.Api.Controllers
                 return Conflict(new { error = ex.Message });
             }
         }
-        // GET: api/v1/users/{id}
+        // GET: api/users/{id}
         /// <summary>
         /// Obtiene un usuario por su Id.
         /// </summary>
@@ -103,7 +103,7 @@ namespace Users.Api.Controllers
             var dto = new Users.Application.Dtos.UserReadDto(u.Id, u.Nickname, u.Name, u.Lastname, u.Email, u.Role.ToString(), u.Status.ToString(), u.EmailConfirmed, u.LastLogin, u.RegistrationDate, u.CreatedAt, u.UpdatedAt);
             return Ok(new { user = dto, message = Localization.Get("Success_UserFound", lang) });
         }
-        // GET: api/v1/users
+        // GET: api/users
         /// <summary>
         /// Lista todos los usuarios.
         /// </summary>
@@ -117,7 +117,7 @@ namespace Users.Api.Controllers
             var list = users.Select(u => new Users.Application.Dtos.UserReadDto(u.Id, u.Nickname, u.Name, u.Lastname, u.Email, u.Role.ToString(), u.Status.ToString(), u.EmailConfirmed, u.LastLogin, u.RegistrationDate, u.CreatedAt, u.UpdatedAt)).ToList();
             return Ok(new { users = list, message = Localization.Get("Success_ListUsers", lang) });
         }
-        // DELETE: api/v1/users/{id}
+        // DELETE: api/users/{id}
         /// <summary>
         /// Elimina un usuario por su Id.
         /// </summary>
@@ -134,7 +134,7 @@ namespace Users.Api.Controllers
             return Ok(new { message = Localization.Get("Success_UserDeleted", lang) });
         }
 
-        // DELETE: api/v1/users/all-data
+        // DELETE: api/users/all-data
         /// <summary>
         /// Elimina TODOS los registros de las tablas USERS, PREFERENCES y SESSIONS.
         /// CUIDADO: Esta operación es irreversible y eliminará toda la información.

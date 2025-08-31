@@ -22,14 +22,28 @@ namespace Users.Tests.Infrastructure
                     ["ASPNETCORE_ENVIRONMENT"] = "TestEnvironment",
                     ["Environment"] = "TestEnvironment"
                 });
+                
+                // Agregar configuración de test específica
+                config.AddJsonFile("appsettings.Test.json", optional: true);
             });
 
             builder.ConfigureServices(services =>
             {
-                // Ya no necesitamos hacer nada aquí, porque ServiceRegistration.cs
-                // detectará el entorno TestEnvironment y usará InMemory automáticamente
+                // Buscar y remover TODOS los DbContext relacionados
+                var descriptors = services.Where(d => d.ServiceType.Name.Contains("DbContext") || 
+                                                     d.ServiceType == typeof(DbContextOptions<UsersDbContext>) ||
+                                                     d.ServiceType == typeof(UsersDbContext)).ToList();
+                
+                foreach (var descriptor in descriptors)
+                {
+                    services.Remove(descriptor);
+                }
 
-                // Solo asegurar que la base de datos se cree después del build
+                // Configurar explícitamente el DbContext para usar InMemory
+                services.AddDbContext<UsersDbContext>(options =>
+                    options.UseInMemoryDatabase("TestDatabase"));
+
+                // Crear la base de datos en memoria
                 var serviceProvider = services.BuildServiceProvider();
                 using var scope = serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<UsersDbContext>();

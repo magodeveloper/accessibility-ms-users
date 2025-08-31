@@ -8,7 +8,7 @@ using Users.Application.Services.Preference;
 namespace Users.Api.Controllers
 {
     [ApiController]
-    [Route("api/v1/preferences")]
+    [Route("api/preferences")]
     public class PreferenceController : ControllerBase
     {
         private readonly IPreferenceService _preferenceService;
@@ -16,7 +16,7 @@ namespace Users.Api.Controllers
         {
             _preferenceService = preferenceService;
         }
-        // GET: api/v1/preferences/by-user/{email}
+        // GET: api/preferences/by-user/{email}
         [HttpGet("by-user/{email}")]
         /// <summary>
         /// Obtiene las preferencias de un usuario por su email.
@@ -59,7 +59,7 @@ namespace Users.Api.Controllers
             };
             return Ok(new { preferences = dto, message = Localization.Get("Success_PreferencesFound", lang) });
         }
-        // POST: api/v1/preferences
+        // POST: api/preferences
         /// <summary>
         /// Crea preferencias para un usuario.
         /// </summary>
@@ -103,14 +103,14 @@ namespace Users.Api.Controllers
                     FontSize = dto.FontSize ?? 14
                 };
                 var created = await _preferenceService.CreatePreferenceAsync(preference);
-                return Created($"/api/v1/preference/{created.Id}", new { created.Id, message = Localization.Get("Success_PreferencesCreated", lang) });
+                return Created($"/api/preference/{created.Id}", new { created.Id, message = Localization.Get("Success_PreferencesCreated", lang) });
             }
             catch (InvalidOperationException)
             {
                 return Conflict(new { error = Localization.Get("Error_PreferencesExist", lang) });
             }
         }
-        // DELETE: api/v1/preferences/{id}
+        // DELETE: api/preferences/{id}
         /// <summary>
         /// Elimina preferencias por Id.
         /// </summary>
