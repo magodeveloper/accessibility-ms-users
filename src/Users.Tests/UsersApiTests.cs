@@ -43,13 +43,31 @@ namespace Users.Tests
             var email = "usercrud@email.com";
             var password = "UserCrud123!";
             var dto = new { nickname = "usercrud", name = "User", lastname = "Crud", email, password };
+
+            // Clean up any existing user first
             await client.DeleteAsync($"/api/users/by-email/{email}");
+
+            // Create user
             var createResp = await client.PostAsJsonAsync("/api/users", dto);
             Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
+
+            // Add small delay to ensure consistency
+            await Task.Delay(100);
+
+            // Verify user exists
             var getResp = await client.GetAsync($"/api/users/by-email?email={email}");
+            if (getResp.StatusCode != HttpStatusCode.OK)
+            {
+                var content = await getResp.Content.ReadAsStringAsync();
+                Assert.Fail($"Expected OK but got {getResp.StatusCode}. Response: {content}");
+            }
             Assert.Equal(HttpStatusCode.OK, getResp.StatusCode);
+
+            // Delete user
             var delResp = await client.DeleteAsync($"/api/users/by-email/{email}");
             Assert.Equal(HttpStatusCode.OK, delResp.StatusCode);
+
+            // Verify user no longer exists
             var getAfterDel = await client.GetAsync($"/api/users/by-email?email={email}");
             Assert.Equal(HttpStatusCode.NotFound, getAfterDel.StatusCode);
         }
