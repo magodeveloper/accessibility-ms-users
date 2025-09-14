@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Users.Infrastructure.Data;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using Users.Application.Dtos;
 
 namespace Users.Application.Services.User
 {
@@ -80,6 +81,51 @@ namespace Users.Application.Services.User
             u.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return u;
+        }
+
+        public async Task<Users.Domain.Entities.User?> UpdateUserAsync(int id, UserPatchDto dto)
+        {
+            var u = await _db.Users.FindAsync(id);
+            if (u is null) return null;
+
+            await ValidateAndUpdateEmailAsync(u, dto.Email);
+            await ValidateAndUpdateNicknameAsync(u, dto.Nickname);
+
+            if (!string.IsNullOrEmpty(dto.Password))
+                u.Password = _passwordService.Hash(dto.Password);
+            if (!string.IsNullOrEmpty(dto.Name)) u.Name = dto.Name;
+            if (!string.IsNullOrEmpty(dto.Lastname)) u.Lastname = dto.Lastname;
+
+            if (!string.IsNullOrEmpty(dto.Role) && Enum.TryParse<Users.Domain.Entities.UserRole>(dto.Role, out var role))
+                u.Role = role;
+            if (!string.IsNullOrEmpty(dto.Status) && Enum.TryParse<Users.Domain.Entities.UserStatus>(dto.Status, out var status))
+                u.Status = status;
+            if (dto.EmailConfirmed.HasValue)
+                u.EmailConfirmed = dto.EmailConfirmed.Value;
+
+            u.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            return u;
+        }
+
+        private async Task ValidateAndUpdateEmailAsync(Users.Domain.Entities.User user, string? newEmail)
+        {
+            if (!string.IsNullOrEmpty(newEmail) && newEmail != user.Email)
+            {
+                var exists = await _db.Users.AnyAsync(x => x.Email == newEmail && x.Id != user.Id);
+                if (exists) throw new InvalidOperationException(Localization.Get("Error_EmailExists"));
+                user.Email = newEmail;
+            }
+        }
+
+        private async Task ValidateAndUpdateNicknameAsync(Users.Domain.Entities.User user, string? newNickname)
+        {
+            if (!string.IsNullOrEmpty(newNickname) && newNickname != user.Nickname)
+            {
+                var exists = await _db.Users.AnyAsync(x => x.Nickname == newNickname && x.Id != user.Id);
+                if (exists) throw new InvalidOperationException(Localization.Get("Error_NicknameExists"));
+                user.Nickname = newNickname;
+            }
         }
 
         public async Task<bool> DeleteUserAsync(int id)

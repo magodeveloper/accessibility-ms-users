@@ -124,13 +124,14 @@ namespace Users.Tests
         {
             var client = _factory.CreateClient();
 
-            // Crear algunos datos de prueba
-            var email1 = "deleteall1@test.com";
-            var email2 = "deleteall2@test.com";
-            var password = "DeleteTest123!";
+            // Crear algunos datos de prueba con emails únicos
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var email1 = $"del1_{timestamp}@test.com";
+            var email2 = $"del2_{timestamp}@test.com";
+            var password = "Test123";
 
-            var dto1 = new { nickname = "delall1", name = "Delete", lastname = "All1", email = email1, password };
-            var dto2 = new { nickname = "delall2", name = "Delete", lastname = "All2", email = email2, password };
+            var dto1 = new { nickname = $"del1_{timestamp}", name = "Delete", lastname = "All1", email = email1, password };
+            var dto2 = new { nickname = $"del2_{timestamp}", name = "Delete", lastname = "All2", email = email2, password };
 
             // Limpiar datos previos
             await client.DeleteAsync($"/api/users/by-email/{email1}");

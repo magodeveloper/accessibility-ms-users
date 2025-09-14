@@ -134,6 +134,44 @@ namespace Users.Api.Controllers
             return Ok(new { message = Localization.Get("Success_UserDeleted", lang) });
         }
 
+        // PATCH: api/users/{id}
+        /// <summary>
+        /// Actualiza un usuario existente (parcial).
+        /// </summary>
+        /// <param name="id">Id del usuario a actualizar.</param>
+        /// <param name="dto">Datos a actualizar del usuario.</param>
+        /// <response code="200">Usuario actualizado exitosamente</response>
+        /// <response code="404">Usuario no encontrado</response>
+        /// <response code="409">Email o nickname ya existen</response>
+        [HttpPatch("{id:int}")]
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(409)]
+        public async Task<IActionResult> Update(int id, [FromBody] Users.Application.Dtos.UserPatchDto dto)
+        {
+            var lang = LanguageHelper.GetRequestLanguage(Request);
+            try
+            {
+                var updated = await _userService.UpdateUserAsync(id, dto);
+                if (updated == null)
+                    return NotFound(new { error = Localization.Get("Error_UserNotFound", lang) });
+
+                var userDto = new Users.Application.Dtos.UserReadDto(
+                    updated.Id, updated.Nickname, updated.Name, updated.Lastname,
+                    updated.Email, updated.Role.ToString(), updated.Status.ToString(),
+                    updated.EmailConfirmed, updated.LastLogin, updated.RegistrationDate,
+                    updated.CreatedAt, updated.UpdatedAt);
+
+                return Ok(new { user = userDto, message = Localization.Get("Success_UserUpdated", lang) });
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message.Contains("email")) return Conflict(new { error = Localization.Get("Error_EmailExists", lang) });
+                if (ex.Message.Contains("nickname")) return Conflict(new { error = Localization.Get("Error_NicknameExists", lang) });
+                return Conflict(new { error = ex.Message });
+            }
+        }
+
         // DELETE: api/users/all-data
         /// <summary>
         /// Elimina TODOS los registros de las tablas USERS, PREFERENCES y SESSIONS.

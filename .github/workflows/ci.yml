@@ -4,9 +4,9 @@ name: CI
 # Ejecuta el workflow en cada push o pull request a la rama master
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build-test:
@@ -20,7 +20,7 @@ jobs:
           MYSQL_USER: devuser
           MYSQL_PASSWORD: devpass
         ports:
-          - 3307:3306  # Expone el puerto 3306 del contenedor en el 3307 del host
+          - 3307:3306 # Expone el puerto 3306 del contenedor en el 3307 del host
         options: >-
           --health-cmd="mysqladmin ping -h localhost -pdevpass" --health-interval=10s --health-timeout=5s --health-retries=10
     env:
@@ -32,7 +32,7 @@ jobs:
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: "9.0.x"
       - name: Restore dependencies
         run: dotnet restore Users.sln
       - name: Build

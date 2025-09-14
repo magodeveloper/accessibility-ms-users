@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Http;
 using Users.Infrastructure.Data;
 using Users.Application.Services;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Users.Application.Services.User;
@@ -35,6 +36,7 @@ builder.Services.AddScoped<ISessionService, SessionService>(); // Servicio de se
 
 // FluentValidation: registra todos los validadores del ensamblado
 builder.Services.AddValidatorsFromAssemblyContaining<UserCreateDtoValidator>(); // Validadores
+builder.Services.AddFluentValidationAutoValidation(); // Auto-validación
 
 // Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer(); // Explorador de API

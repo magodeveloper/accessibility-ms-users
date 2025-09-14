@@ -41,6 +41,14 @@ ScaffoldingReadMe.txt
 *~
 CodeCoverage/
 
+# Coverage reports (generated files)
+coverage/
+coverage-report/
+coverage-dashboard/
+TestResults/
+src/**/coverage/
+src/**/TestResults/
+
 # MSBuild Binary and Structured Log
 *.binlog
 

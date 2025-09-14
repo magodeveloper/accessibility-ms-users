@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     user_id VARCHAR(255),
     action VARCHAR(100),
     table_name VARCHAR(100),
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    timestamp DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
     ip_address VARCHAR(45),
     user_agent TEXT
 );

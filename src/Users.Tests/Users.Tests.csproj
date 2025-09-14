@@ -4,6 +4,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>opencover</CoverletOutputFormat>
+    <CoverletOutput>../TestResults/coverage.opencover.xml</CoverletOutput>
+    <ExcludeByFile>
+      **/Migrations/**;**/*ModelSnapshot.cs;**/InitialCreate.cs;**/InitialCreate.Designer.cs;**/ServiceRegistration.cs;**/UsersDbContext.cs</ExcludeByFile>
+    <Exclude>[*]*Program,[*]*Startup,[Users.Infrastructure]*,[*]*.Migrations.*</Exclude>
+    <ExcludeByAttribute>
+      Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
@@ -13,6 +21,9 @@
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="coverlet.msbuild" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

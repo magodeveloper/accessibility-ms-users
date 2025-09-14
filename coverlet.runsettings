@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <ExcludeByFile>
+            **/Migrations/**
+            **/*ModelSnapshot.cs
+            **/InitialCreate.cs
+            **/InitialCreate.Designer.cs
+            **/ServiceRegistration.cs
+            **/UsersDbContext.cs
+          </ExcludeByFile>
+          <ExcludeByAssembly>
+            Users.Infrastructure
+          </ExcludeByAssembly>
+          <Exclude>
+            [*]*Program
+            [*]*Startup
+            [Users.Infrastructure]*
+            [*]*.Migrations.*
+          </Exclude>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
