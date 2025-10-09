@@ -222,6 +222,9 @@ if (metricsEnabled)
     });
 }
 
+// Gateway Secret Validation - Valida que las peticiones vengan del Gateway
+app.UseGatewaySecretValidation();
+
 // Habilitar autenticación y autorización JWT (debe ir ANTES del UserContextMiddleware)
 app.UseAuthentication();
 app.UseAuthorization();
