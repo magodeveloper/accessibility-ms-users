@@ -18,7 +18,6 @@ namespace Users.Domain.Entities
         public DateTime RegistrationDate { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-
         public Preference? Preference { get; set; }
         public ICollection<Session> Sessions { get; set; } = new List<Session>();
     }

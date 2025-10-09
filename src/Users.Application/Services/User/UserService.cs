@@ -1,9 +1,9 @@
 using Users.Application;
+using Users.Application.Dtos;
 using System.Threading.Tasks;
 using Users.Infrastructure.Data;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using Users.Application.Dtos;
 
 namespace Users.Application.Services.User
 {
@@ -17,8 +17,16 @@ namespace Users.Application.Services.User
             var user = await _db.Users
                 .Include(u => u.Preference)
                 .FirstOrDefaultAsync(u => u.Email == email);
-            if (user == null) return null;
-            if (!_passwordService.Verify(password, user.Password)) return null;
+            if (user == null)
+            {
+                return null;
+            }
+
+            if (!_passwordService.Verify(password, user.Password))
+            {
+                return null;
+            }
+
             return user;
         }
 
@@ -31,9 +39,15 @@ namespace Users.Application.Services.User
         public async Task<Users.Domain.Entities.User> CreateUserAsync(Users.Domain.Entities.User user)
         {
             if (await _db.Users.AnyAsync(u => u.Email == user.Email))
+            {
                 throw new InvalidOperationException(Localization.Get("Error_EmailExists"));
+            }
+
             if (await _db.Users.AnyAsync(u => u.Nickname == user.Nickname))
+            {
                 throw new InvalidOperationException(Localization.Get("Error_NicknameExists"));
+            }
+
             user.Password = _passwordService.Hash(user.Password);
             user.Role = Users.Domain.Entities.UserRole.user;
             user.Status = Users.Domain.Entities.UserStatus.active;
@@ -60,21 +74,43 @@ namespace Users.Application.Services.User
         public async Task<Users.Domain.Entities.User?> UpdateUserAsync(Users.Domain.Entities.User user)
         {
             var u = await _db.Users.FindAsync(user.Id);
-            if (u is null) return null;
+            if (u is null)
+            {
+                return null;
+            }
 
             // Validar email único si se quiere actualizar
             if (!string.IsNullOrEmpty(user.Email) && user.Email != u.Email)
             {
                 var exists = await _db.Users.AnyAsync(x => x.Email == user.Email && x.Id != u.Id);
-                if (exists) throw new InvalidOperationException(Localization.Get("Error_EmailExists"));
+                if (exists)
+                {
+                    throw new InvalidOperationException(Localization.Get("Error_EmailExists"));
+                }
+
                 u.Email = user.Email;
             }
 
             if (!string.IsNullOrEmpty(user.Password))
+            {
                 u.Password = _passwordService.Hash(user.Password);
-            if (!string.IsNullOrEmpty(user.Nickname)) u.Nickname = user.Nickname;
-            if (!string.IsNullOrEmpty(user.Name)) u.Name = user.Name;
-            if (!string.IsNullOrEmpty(user.Lastname)) u.Lastname = user.Lastname;
+            }
+
+            if (!string.IsNullOrEmpty(user.Nickname))
+            {
+                u.Nickname = user.Nickname;
+            }
+
+            if (!string.IsNullOrEmpty(user.Name))
+            {
+                u.Name = user.Name;
+            }
+
+            if (!string.IsNullOrEmpty(user.Lastname))
+            {
+                u.Lastname = user.Lastname;
+            }
+
             u.Role = user.Role;
             u.Status = user.Status;
             u.EmailConfirmed = user.EmailConfirmed;
@@ -86,22 +122,43 @@ namespace Users.Application.Services.User
         public async Task<Users.Domain.Entities.User?> UpdateUserAsync(int id, UserPatchDto dto)
         {
             var u = await _db.Users.FindAsync(id);
-            if (u is null) return null;
+            if (u is null)
+            {
+                return null;
+            }
 
             await ValidateAndUpdateEmailAsync(u, dto.Email);
             await ValidateAndUpdateNicknameAsync(u, dto.Nickname);
 
             if (!string.IsNullOrEmpty(dto.Password))
+            {
                 u.Password = _passwordService.Hash(dto.Password);
-            if (!string.IsNullOrEmpty(dto.Name)) u.Name = dto.Name;
-            if (!string.IsNullOrEmpty(dto.Lastname)) u.Lastname = dto.Lastname;
+            }
+
+            if (!string.IsNullOrEmpty(dto.Name))
+            {
+                u.Name = dto.Name;
+            }
+
+            if (!string.IsNullOrEmpty(dto.Lastname))
+            {
+                u.Lastname = dto.Lastname;
+            }
 
             if (!string.IsNullOrEmpty(dto.Role) && Enum.TryParse<Users.Domain.Entities.UserRole>(dto.Role, out var role))
+            {
                 u.Role = role;
+            }
+
             if (!string.IsNullOrEmpty(dto.Status) && Enum.TryParse<Users.Domain.Entities.UserStatus>(dto.Status, out var status))
+            {
                 u.Status = status;
+            }
+
             if (dto.EmailConfirmed.HasValue)
+            {
                 u.EmailConfirmed = dto.EmailConfirmed.Value;
+            }
 
             u.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
@@ -113,7 +170,11 @@ namespace Users.Application.Services.User
             if (!string.IsNullOrEmpty(newEmail) && newEmail != user.Email)
             {
                 var exists = await _db.Users.AnyAsync(x => x.Email == newEmail && x.Id != user.Id);
-                if (exists) throw new InvalidOperationException(Localization.Get("Error_EmailExists"));
+                if (exists)
+                {
+                    throw new InvalidOperationException(Localization.Get("Error_EmailExists"));
+                }
+
                 user.Email = newEmail;
             }
         }
@@ -123,7 +184,11 @@ namespace Users.Application.Services.User
             if (!string.IsNullOrEmpty(newNickname) && newNickname != user.Nickname)
             {
                 var exists = await _db.Users.AnyAsync(x => x.Nickname == newNickname && x.Id != user.Id);
-                if (exists) throw new InvalidOperationException(Localization.Get("Error_NicknameExists"));
+                if (exists)
+                {
+                    throw new InvalidOperationException(Localization.Get("Error_NicknameExists"));
+                }
+
                 user.Nickname = newNickname;
             }
         }
@@ -131,7 +196,11 @@ namespace Users.Application.Services.User
         public async Task<bool> DeleteUserAsync(int id)
         {
             var u = await _db.Users.FindAsync(id);
-            if (u is null) return false;
+            if (u is null)
+            {
+                return false;
+            }
+
             _db.Users.Remove(u);
             await _db.SaveChangesAsync();
             return true;

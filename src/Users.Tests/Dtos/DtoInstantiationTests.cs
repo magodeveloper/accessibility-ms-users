@@ -1,5 +1,5 @@
-using Users.Application.Dtos;
 using Xunit;
+using Users.Application.Dtos;
 
 namespace Users.Tests.Dtos
 {

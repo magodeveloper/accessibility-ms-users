@@ -1,15 +1,15 @@
+using Moq;
 using Xunit;
 using FluentAssertions;
-using Moq;
+using Users.Api.Controllers;
+using Users.Domain.Entities;
+using Users.Application.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
-using Users.Api.Controllers;
-using Users.Application.Services;
-using Users.Application.Services.User;
-using Users.Application.Dtos;
-using Users.Domain.Entities;
 using Users.Infrastructure.Data;
+using Users.Application.Services;
+using Microsoft.EntityFrameworkCore;
+using Users.Application.Services.User;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Users.Tests.Controllers
@@ -18,6 +18,7 @@ namespace Users.Tests.Controllers
     {
         private readonly Mock<IPasswordService> _mockPasswordService;
         private readonly Mock<ISessionTokenService> _mockTokenService;
+        private readonly Mock<IJwtTokenService> _mockJwtTokenService;
         private readonly Mock<IUserService> _mockUserService;
         private readonly UsersDbContext _context;
         private readonly AuthController _controller;
@@ -36,10 +37,11 @@ namespace Users.Tests.Controllers
             // Setup mocks
             _mockPasswordService = new Mock<IPasswordService>();
             _mockTokenService = new Mock<ISessionTokenService>();
+            _mockJwtTokenService = new Mock<IJwtTokenService>();
             _mockUserService = new Mock<IUserService>();
 
             // Setup controller
-            _controller = new AuthController(_context, _mockPasswordService.Object, _mockTokenService.Object, _mockUserService.Object);
+            _controller = new AuthController(_context, _mockPasswordService.Object, _mockTokenService.Object, _mockJwtTokenService.Object, _mockUserService.Object);
 
             // Setup HttpContext for language helper
             var httpContext = new DefaultHttpContext();
@@ -71,11 +73,18 @@ namespace Users.Tests.Controllers
                 UpdatedAt = DateTime.UtcNow
             };
 
-            var token = "generated-token";
+            var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwicm9sZSI6InVzZXIiLCJuYW1lIjoiVGVzdCBVc2VyIn0.test-signature";
             var tokenHash = "hashed-token";
+            var expiresAt = DateTime.UtcNow.AddHours(24);
 
             _mockUserService.Setup(x => x.AuthenticateAsync(loginDto.Email, loginDto.Password))
                            .ReturnsAsync(user);
+            _mockJwtTokenService.Setup(x => x.GenerateToken(user.Id, user.Email, user.Role.ToString(), It.IsAny<string>()))
+                               .Returns(token);
+            _mockJwtTokenService.Setup(x => x.GetTokenExpiration())
+                               .Returns(expiresAt);
+            _mockTokenService.Setup(x => x.HashToken(token))
+                            .Returns(tokenHash);
             _mockTokenService.Setup(x => x.GenerateToken())
                             .Returns((token, tokenHash));
 
@@ -208,11 +217,18 @@ namespace Users.Tests.Controllers
                 Preference = preference
             };
 
-            var token = "generated-token";
+            var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwicm9sZSI6InVzZXIiLCJuYW1lIjoiVGVzdCBVc2VyIn0.test-signature";
             var tokenHash = "hashed-token";
+            var expiresAt = DateTime.UtcNow.AddHours(24);
 
             _mockUserService.Setup(x => x.AuthenticateAsync(loginDto.Email, loginDto.Password))
                            .ReturnsAsync(user);
+            _mockJwtTokenService.Setup(x => x.GenerateToken(user.Id, user.Email, user.Role.ToString(), It.IsAny<string>()))
+                               .Returns(token);
+            _mockJwtTokenService.Setup(x => x.GetTokenExpiration())
+                               .Returns(expiresAt);
+            _mockTokenService.Setup(x => x.HashToken(token))
+                            .Returns(tokenHash);
             _mockTokenService.Setup(x => x.GenerateToken())
                             .Returns((token, tokenHash));
 
@@ -414,11 +430,18 @@ namespace Users.Tests.Controllers
                 UpdatedAt = DateTime.UtcNow
             };
 
-            var token = "generated-token";
+            var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwicm9sZSI6InVzZXIiLCJuYW1lIjoiVGVzdCBVc2VyIn0.test-signature";
             var tokenHash = "hashed-token";
+            var expiresAt = DateTime.UtcNow.AddHours(24);
 
             _mockUserService.Setup(x => x.AuthenticateAsync(loginDto.Email, loginDto.Password))
                            .ReturnsAsync(user);
+            _mockJwtTokenService.Setup(x => x.GenerateToken(user.Id, user.Email, user.Role.ToString(), It.IsAny<string>()))
+                               .Returns(token);
+            _mockJwtTokenService.Setup(x => x.GetTokenExpiration())
+                               .Returns(expiresAt);
+            _mockTokenService.Setup(x => x.HashToken(token))
+                            .Returns(tokenHash);
             _mockTokenService.Setup(x => x.GenerateToken())
                             .Returns((token, tokenHash));
 

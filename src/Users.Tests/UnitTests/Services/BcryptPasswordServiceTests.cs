@@ -1,6 +1,6 @@
+using Xunit;
 using FluentAssertions;
 using Users.Application.Services;
-using Xunit;
 
 namespace Users.Tests.UnitTests.Services;
 

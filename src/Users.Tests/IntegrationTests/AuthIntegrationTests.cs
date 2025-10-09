@@ -1,10 +1,10 @@
-using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using Users.Tests.Infrastructure;
 using Xunit;
+using System.Net;
+using System.Text.Json;
+using FluentAssertions;
+using System.Net.Http.Json;
+using Users.Tests.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Users.Tests.IntegrationTests;
 
@@ -21,7 +21,8 @@ public class AuthIntegrationTests : IClassFixture<TestWebApplicationFactory<User
     public async Task AuthenticationFlow_ShouldWorkEndToEnd()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient(); // Cliente autenticado para crear/eliminar usuarios
+        var unauthClient = _factory.CreateClient(); // Cliente sin autenticación para login
         var email = "authflow@test.com";
         var password = "AuthFlow123!";
         var userDto = new { nickname = "authflow", name = "Auth", lastname = "Flow", email, password };
@@ -40,8 +41,8 @@ public class AuthIntegrationTests : IClassFixture<TestWebApplicationFactory<User
         userElement.TryGetProperty("id", out var userIdElement).Should().BeTrue();
         var userId = userIdElement.GetInt32();
 
-        // 2. Login successfully
-        var loginResponse = await client.PostAsJsonAsync("/api/auth/login", new { email, password });
+        // 2. Login successfully (login es endpoint público - sin autenticación)
+        var loginResponse = await unauthClient.PostAsJsonAsync("/api/auth/login", new { email, password });
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var loginContent = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -51,7 +52,7 @@ public class AuthIntegrationTests : IClassFixture<TestWebApplicationFactory<User
         var token = tokenElement.GetString();
         token.Should().NotBeNullOrEmpty();
 
-        // 3. Verify session was created
+        // 3. Verify session was created (requiere autenticación)
         var sessionsResponse = await client.GetAsync($"/api/sessions/user/{userId}");
         sessionsResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -59,11 +60,11 @@ public class AuthIntegrationTests : IClassFixture<TestWebApplicationFactory<User
         sessionsContent.TryGetProperty("sessions", out var sessionsArray).Should().BeTrue();
         sessionsArray.GetArrayLength().Should().BeGreaterThan(0);
 
-        // 4. Logout successfully
-        var logoutResponse = await client.PostAsJsonAsync("/api/auth/logout", new { email });
+        // 4. Logout successfully (logout es endpoint público)
+        var logoutResponse = await unauthClient.PostAsJsonAsync("/api/auth/logout", new { email });
         logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // 5. Verify session was deleted
+        // 5. Verify session was deleted (requiere autenticación)
         var sessionsAfterLogoutResponse = await client.GetAsync($"/api/sessions/user/{userId}");
         if (sessionsAfterLogoutResponse.StatusCode == HttpStatusCode.OK)
         {
@@ -101,7 +102,8 @@ public class AuthIntegrationTests : IClassFixture<TestWebApplicationFactory<User
     public async Task Login_ShouldUpdateLastLogin()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient(); // Cliente autenticado para crear/eliminar usuarios
+        var unauthClient = _factory.CreateClient(); // Cliente sin auth para login
         var email = "lastlogin@test.com";
         var password = "LastLogin123!";
         var userDto = new { nickname = "lastlogin", name = "Last", lastname = "Login", email, password };
@@ -109,12 +111,13 @@ public class AuthIntegrationTests : IClassFixture<TestWebApplicationFactory<User
         await client.DeleteAsync($"/api/users/by-email/{email}");
         await client.PostAsJsonAsync("/api/users-with-preferences", userDto);
 
-        // Act
-        var loginResponse = await client.PostAsJsonAsync("/api/auth/login", new { email, password });
+        // Act - login es público
+        var loginResponse = await unauthClient.PostAsJsonAsync("/api/auth/login", new { email, password });
 
         // Assert
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
+        // Get user requiere autenticación
         var getUserResponse = await client.GetAsync($"/api/users/by-email?email={email}");
         getUserResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -149,7 +152,8 @@ public class AuthIntegrationTests : IClassFixture<TestWebApplicationFactory<User
     public async Task Logout_ShouldWork_EvenWithoutActiveSession()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient(); // Cliente autenticado para crear/eliminar usuarios
+        var unauthClient = _factory.CreateClient(); // Cliente sin auth para logout (es público)
         var email = "nologout@test.com";
         var password = "NoLogout123!";
         var userDto = new { nickname = "nologout", name = "No", lastname = "Logout", email, password };
@@ -157,8 +161,8 @@ public class AuthIntegrationTests : IClassFixture<TestWebApplicationFactory<User
         await client.DeleteAsync($"/api/users/by-email/{email}");
         await client.PostAsJsonAsync("/api/users-with-preferences", userDto);
 
-        // Act - logout without login
-        var logoutResponse = await client.PostAsJsonAsync("/api/auth/logout", new { email });
+        // Act - logout without login (logout es público)
+        var logoutResponse = await unauthClient.PostAsJsonAsync("/api/auth/logout", new { email });
 
         // Assert
         logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Users.Infrastructure.Data;
 using Users.Application.Services;
 using Microsoft.EntityFrameworkCore;
+using Users.Application.Services.UserContext;
 
 namespace Users.Api.Controllers
 {
@@ -16,35 +17,90 @@ namespace Users.Api.Controllers
     {
         private static void UpdateUserFields(User user, PreferenceUserPatchDto patchDto, IPasswordService passwordService)
         {
-            if (patchDto.Nickname is not null) user.Nickname = patchDto.Nickname;
-            if (patchDto.Name is not null) user.Name = patchDto.Name;
-            if (patchDto.Lastname is not null) user.Lastname = patchDto.Lastname;
-            if (patchDto.Email is not null) user.Email = patchDto.Email;
-            if (patchDto.Password is not null) user.Password = passwordService.Hash(patchDto.Password);
+            if (patchDto.Nickname is not null)
+            {
+                user.Nickname = patchDto.Nickname;
+            }
+
+            if (patchDto.Name is not null)
+            {
+                user.Name = patchDto.Name;
+            }
+
+            if (patchDto.Lastname is not null)
+            {
+                user.Lastname = patchDto.Lastname;
+            }
+
+            if (patchDto.Email is not null)
+            {
+                user.Email = patchDto.Email;
+            }
+
+            if (patchDto.Password is not null)
+            {
+                user.Password = passwordService.Hash(patchDto.Password);
+            }
+
             user.UpdatedAt = DateTime.UtcNow;
         }
 
         private static void UpdatePreferenceFields(Preference pref, PreferenceUserPatchDto patchDto)
         {
             if (patchDto.WcagVersion is not null && new[] { "2.0", "2.1", "2.2" }.Contains(patchDto.WcagVersion))
+            {
                 pref.WcagVersion = patchDto.WcagVersion;
-            if (patchDto.WcagLevel is not null && Enum.TryParse<WcagLevel>(patchDto.WcagLevel, true, out var wcagLevel)) pref.WcagLevel = wcagLevel;
-            if (patchDto.Language is not null && Enum.TryParse<Language>(patchDto.Language, true, out var language)) pref.Language = language;
-            if (patchDto.VisualTheme is not null && Enum.TryParse<VisualTheme>(patchDto.VisualTheme, true, out var visualTheme)) pref.VisualTheme = visualTheme;
-            if (patchDto.ReportFormat is not null && Enum.TryParse<ReportFormat>(patchDto.ReportFormat, true, out var reportFormat)) pref.ReportFormat = reportFormat;
-            if (patchDto.NotificationsEnabled is not null) pref.NotificationsEnabled = patchDto.NotificationsEnabled.Value;
-            if (patchDto.AiResponseLevel is not null && Enum.TryParse<AiResponseLevel>(patchDto.AiResponseLevel, true, out var aiLevel)) pref.AiResponseLevel = aiLevel;
-            if (patchDto.FontSize is not null) pref.FontSize = patchDto.FontSize.Value;
+            }
+
+            if (patchDto.WcagLevel is not null && Enum.TryParse<WcagLevel>(patchDto.WcagLevel, true, out var wcagLevel))
+            {
+                pref.WcagLevel = wcagLevel;
+            }
+
+            if (patchDto.Language is not null && Enum.TryParse<Language>(patchDto.Language, true, out var language))
+            {
+                pref.Language = language;
+            }
+
+            if (patchDto.VisualTheme is not null && Enum.TryParse<VisualTheme>(patchDto.VisualTheme, true, out var visualTheme))
+            {
+                pref.VisualTheme = visualTheme;
+            }
+
+            if (patchDto.ReportFormat is not null && Enum.TryParse<ReportFormat>(patchDto.ReportFormat, true, out var reportFormat))
+            {
+                pref.ReportFormat = reportFormat;
+            }
+
+            if (patchDto.NotificationsEnabled is not null)
+            {
+                pref.NotificationsEnabled = patchDto.NotificationsEnabled.Value;
+            }
+
+            if (patchDto.AiResponseLevel is not null && Enum.TryParse<AiResponseLevel>(patchDto.AiResponseLevel, true, out var aiLevel))
+            {
+                pref.AiResponseLevel = aiLevel;
+            }
+
+            if (patchDto.FontSize is not null)
+            {
+                pref.FontSize = patchDto.FontSize.Value;
+            }
+
             pref.UpdatedAt = DateTime.UtcNow;
         }
+
         private readonly UsersDbContext _db;
         private readonly IPasswordService _passwordService;
+        private readonly IUserContext _userContext;
 
-        public UsersWithPreferencesController(UsersDbContext db, IPasswordService passwordService)
+        public UsersWithPreferencesController(UsersDbContext db, IPasswordService passwordService, IUserContext userContext)
         {
             _db = db;
             _passwordService = passwordService;
+            _userContext = userContext;
         }
+
         /// <summary>
         /// Crea un usuario y sus preferencias por defecto en una sola llamada.
         /// </summary>
@@ -55,20 +111,29 @@ namespace Users.Api.Controllers
         /// <response code="201">Usuario y preferencias creados exitosamente</response>
         /// <response code="409">Email o nickname ya existen</response>
         /// <response code="400">Datos inválidos</response>
+        /// <response code="401">No autenticado</response>
         [HttpPost("")]
         [ProducesResponseType(typeof(object), 201)]
         [ProducesResponseType(409)]
         [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
         [Produces("application/json")]
         [Consumes("application/json")]
         [Tags("UsersWithPreferences")]
         public async Task<IActionResult> Create([FromBody] UserCreateDto userDto)
         {
             var lang = LanguageHelper.GetRequestLanguage(Request);
+
+            // Endpoint público - no requiere autenticación (registro de nuevos usuarios)
             if (await _db.Users.AnyAsync(u => u.Email == userDto.Email))
+            {
                 return Conflict(new { error = Localization.Get("Error_EmailExists", lang) });
+            }
+
             if (await _db.Users.AnyAsync(u => u.Nickname == userDto.Nickname))
+            {
                 return Conflict(new { error = Localization.Get("Error_NicknameExists", lang) });
+            }
 
             var now = DateTime.UtcNow;
             var user = new User
@@ -138,21 +203,35 @@ namespace Users.Api.Controllers
         /// <response code="200">Usuario y/o preferencias actualizados</response>
         /// <response code="404">Usuario o preferencias no encontrados</response>
         /// <response code="400">Datos inválidos</response>
+        /// <response code="401">No autenticado</response>
         [HttpPatch("by-email/{email}")]
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
         [Consumes("application/json")]
         [Tags("UsersWithPreferences")]
         public async Task<IActionResult> Patch(string email, [FromBody] PreferenceUserPatchDto patchDto)
         {
             var lang = LanguageHelper.GetRequestLanguage(Request);
+
+            // Validar autenticación
+            if (!_userContext.IsAuthenticated)
+            {
+                return Unauthorized(new { error = Localization.Get("Error_NotAuthenticated", lang) });
+            }
+
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
+            {
                 return NotFound(new { error = Localization.Get("Error_UserNotFound", lang) });
+            }
+
             var pref = await _db.Preferences.FirstOrDefaultAsync(p => p.UserId == user.Id);
             if (pref == null)
+            {
                 return NotFound(new { error = Localization.Get("Error_PreferencesNotFound", lang) });
+            }
 
             UpdateUserFields(user, patchDto, _passwordService);
             UpdatePreferenceFields(pref, patchDto);

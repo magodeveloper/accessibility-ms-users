@@ -1,4 +1,3 @@
-using Users.Api;
 using Users.Api.Helpers;
 using Users.Application;
 using Users.Domain.Entities;
@@ -7,23 +6,33 @@ using Microsoft.AspNetCore.Mvc;
 using Users.Infrastructure.Data;
 using Users.Application.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Users.Api.Controllers
 {
+
     [ApiController]
     [Route("api/[controller]")]
+    [AllowAnonymous] // Auth controller es público (login, registro, etc.)
     public class AuthController : ControllerBase
     {
         private readonly UsersDbContext _db;
         private readonly IPasswordService _passwordService;
-        private readonly ISessionTokenService _tokenService;
+        private readonly ISessionTokenService _tokenService; // Legacy - para compatibilidad
+        private readonly IJwtTokenService _jwtTokenService; // Nuevo servicio JWT
         private readonly Users.Application.Services.User.IUserService _userService;
 
-        public AuthController(UsersDbContext db, IPasswordService passwordService, ISessionTokenService tokenService, Users.Application.Services.User.IUserService userService)
+        public AuthController(
+            UsersDbContext db,
+            IPasswordService passwordService,
+            ISessionTokenService tokenService,
+            IJwtTokenService jwtTokenService,
+            Users.Application.Services.User.IUserService userService)
         {
             _db = db;
             _passwordService = passwordService;
             _tokenService = tokenService;
+            _jwtTokenService = jwtTokenService;
             _userService = userService;
         }
 
@@ -42,21 +51,50 @@ namespace Users.Api.Controllers
             var lang = LanguageHelper.GetRequestLanguage(Request);
             var user = await _userService.AuthenticateAsync(dto.Email, dto.Password);
             if (user is null)
+            {
                 return Unauthorized(new { error = Localization.Get("Error_InvalidCredentials", lang) });
+            }
             if (user.Status == UserStatus.inactive || user.Status == UserStatus.blocked)
+            {
                 return Forbid(Localization.Get("Error_UserInactive", lang));
+            }
 
+            // Actualizar LastLogin del usuario
             user.LastLogin = DateTime.UtcNow;
-            var (token, tokenHash) = _tokenService.GenerateToken();
+
+            // Generar JWT token real (nuevo)
+            var jwtToken = _jwtTokenService.GenerateToken(
+                user.Id,
+                user.Email,
+                user.Role.ToString(),
+                $"{user.Name} {user.Lastname}"
+            );
+            var tokenExpiry = _jwtTokenService.GetTokenExpiration();
+
+            // Guardar hash del token en sesión (para invalidación)
+            var tokenHash = _tokenService.HashToken(jwtToken);
             var session = new Session
             {
                 UserId = user.Id,
                 TokenHash = tokenHash,
                 CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(1440) // configurable
+                ExpiresAt = tokenExpiry
             };
             _db.Sessions.Add(session);
-            await _db.SaveChangesAsync();
+
+            // Guardar cambios: user.LastLogin y session en una transacción
+            // Manejar concurrencia para InMemoryDatabase en tests
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Recargar el usuario y reintentar
+                await _db.Entry(user).ReloadAsync();
+                user.LastLogin = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+            }
 
             // Map Preference
             PreferenceReadDto? prefDto = null;
@@ -93,7 +131,7 @@ namespace Users.Api.Controllers
                 prefDto
             );
 
-            return Ok(new LoginResponseDto(token, session.ExpiresAt, userDto));
+            return Ok(new LoginResponseDto(jwtToken, session.ExpiresAt, userDto));
         }
 
         /// <summary>
@@ -109,7 +147,9 @@ namespace Users.Api.Controllers
             var lang = LanguageHelper.GetRequestLanguage(Request);
             var u = await _db.Users.FirstOrDefaultAsync(x => x.Email == dto.Email);
             if (u is null)
+            {
                 return NotFound(new { error = Localization.Get("Error_UserNotFound", lang) });
+            }
             var sessions = _db.Sessions.Where(s => s.UserId == u.Id);
             _db.Sessions.RemoveRange(sessions);
             u.LastLogin = null;
@@ -130,7 +170,9 @@ namespace Users.Api.Controllers
             var lang = LanguageHelper.GetRequestLanguage(Request);
             var u = await _db.Users.FirstOrDefaultAsync(x => x.Email == dto.Email);
             if (u is null)
+            {
                 return NotFound(new { error = Localization.Get("Error_UserNotFound", lang) });
+            }
             u.Password = _passwordService.Hash(dto.NewPassword);
             u.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
@@ -150,7 +192,9 @@ namespace Users.Api.Controllers
             var lang = LanguageHelper.GetRequestLanguage(Request);
             var u = await _db.Users.FindAsync(userId);
             if (u is null)
+            {
                 return NotFound(new { error = Localization.Get("Error_UserNotFound", lang) });
+            }
             u.EmailConfirmed = true;
             u.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();

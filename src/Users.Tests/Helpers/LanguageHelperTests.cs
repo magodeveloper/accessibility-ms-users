@@ -1,8 +1,8 @@
+using Moq;
+using Xunit;
+using Users.Api.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
-using Moq;
-using Users.Api.Helpers;
-using Xunit;
 
 namespace Users.Tests.Helpers
 {

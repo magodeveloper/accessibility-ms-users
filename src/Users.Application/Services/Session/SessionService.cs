@@ -74,7 +74,11 @@ namespace Users.Application.Services.Session
         public async Task<Users.Domain.Entities.Session?> UpdateSessionAsync(Users.Domain.Entities.Session session)
         {
             var s = await _db.Sessions.FindAsync(session.Id);
-            if (s is null) return null;
+            if (s is null)
+            {
+                return null;
+            }
+
             s.ExpiresAt = session.ExpiresAt;
             await _db.SaveChangesAsync();
             return s;
@@ -83,7 +87,11 @@ namespace Users.Application.Services.Session
         public async Task<bool> DeleteSessionAsync(int id)
         {
             var s = await _db.Sessions.FindAsync(id);
-            if (s is null) return false;
+            if (s is null)
+            {
+                return false;
+            }
+
             _db.Sessions.Remove(s);
             await _db.SaveChangesAsync();
             return true;
@@ -92,7 +100,11 @@ namespace Users.Application.Services.Session
         public async Task<bool> DeleteSessionsByUserIdAsync(int userId)
         {
             var sessions = await _db.Sessions.Where(s => s.UserId == userId).ToListAsync();
-            if (!sessions.Any()) return false;
+            if (!sessions.Any())
+            {
+                return false;
+            }
+
             _db.Sessions.RemoveRange(sessions);
             await _db.SaveChangesAsync();
             return true;

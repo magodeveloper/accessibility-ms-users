@@ -1,10 +1,10 @@
-using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Users.Application.Dtos;
-using Users.Application.Services.Session;
-using Users.Domain.Entities;
-using Users.Infrastructure.Data;
 using Xunit;
+using FluentAssertions;
+using Users.Domain.Entities;
+using Users.Application.Dtos;
+using Users.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Users.Application.Services.Session;
 
 namespace Users.Tests.UnitTests.Services;
 

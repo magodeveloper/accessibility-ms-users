@@ -3,8 +3,8 @@ using Users.Api;
 using System.Net;
 using System.Text.Json;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Users.Tests.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Users.Tests
 {
@@ -21,16 +21,21 @@ namespace Users.Tests
         [Fact]
         public async Task Auth_Login_And_Logout_Works()
         {
-            var client = _factory.CreateClient();
+            var client = _factory.CreateAuthenticatedClient(); // Usuario autenticado para crear/eliminar usuarios
             var email = "testauth@email.com";
             var password = "TestAuth123!";
             var dto = new { nickname = "testauth", name = "Test", lastname = "Auth", email, password };
             await client.DeleteAsync($"/api/users/by-email/{email}");
             await client.PostAsJsonAsync("/api/users-with-preferences", dto);
-            var loginResp = await client.PostAsJsonAsync("/api/auth/login", new { email, password });
+
+            // Login NO requiere autenticación (endpoint público)
+            var unauthClient = _factory.CreateClient();
+            var loginResp = await unauthClient.PostAsJsonAsync("/api/auth/login", new { email, password });
             Assert.Equal(HttpStatusCode.OK, loginResp.StatusCode);
             var loginData = await loginResp.Content.ReadFromJsonAsync<JsonElement>();
             Assert.True(loginData.TryGetProperty("token", out _));
+
+            // Logout usa cliente autenticado
             var logoutResp = await client.PostAsJsonAsync("/api/auth/logout", new { email });
             Assert.Equal(HttpStatusCode.OK, logoutResp.StatusCode);
         }
@@ -39,7 +44,7 @@ namespace Users.Tests
         [Fact]
         public async Task Users_CRUD_Works()
         {
-            var client = _factory.CreateClient();
+            var client = _factory.CreateAuthenticatedClient(); // Cliente autenticado
             var email = "usercrud@email.com";
             var password = "UserCrud123!";
             var dto = new { nickname = "usercrud", name = "User", lastname = "Crud", email, password };
@@ -76,7 +81,7 @@ namespace Users.Tests
         [Fact]
         public async Task UsersWithPreferences_Create_Works()
         {
-            var client = _factory.CreateClient();
+            var client = _factory.CreateAuthenticatedClient(); // Cliente autenticado
             var email = "uwp@email.com";
             var password = "UwpTest123!";
             await client.DeleteAsync($"/api/users/by-email/{email}");
@@ -89,7 +94,7 @@ namespace Users.Tests
         [Fact]
         public async Task Preferences_CRUD_Works()
         {
-            var client = _factory.CreateClient();
+            var client = _factory.CreateAuthenticatedClient(); // Cliente autenticado
             var email = "pref@email.com";
             var password = "PrefTest123!";
             await client.DeleteAsync($"/api/users/by-email/{email}");
@@ -115,7 +120,7 @@ namespace Users.Tests
         [Fact]
         public async Task Sessions_CRUD_Works()
         {
-            var client = _factory.CreateClient();
+            var client = _factory.CreateAuthenticatedClient(); // Cliente autenticado
             var email = "session@email.com";
             var password = "SessionTest123!";
             await client.DeleteAsync($"/api/users/by-email/{email}");
@@ -140,13 +145,13 @@ namespace Users.Tests
         [Fact]
         public async Task DeleteAllData_RemovesAllRecords()
         {
-            var client = _factory.CreateClient();
+            var client = _factory.CreateAuthenticatedClient(); // Cliente autenticado
 
             // Crear algunos datos de prueba con emails únicos
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var email1 = $"del1_{timestamp}@test.com";
             var email2 = $"del2_{timestamp}@test.com";
-            var password = "Test123";
+            var password = "Test1234"; // Mínimo 8 caracteres según validación FluentValidation
 
             var dto1 = new { nickname = $"del1_{timestamp}", name = "Delete", lastname = "All1", email = email1, password };
             var dto2 = new { nickname = $"del2_{timestamp}", name = "Delete", lastname = "All2", email = email2, password };

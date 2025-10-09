@@ -16,7 +16,11 @@ public static class Localization
         var dict = _cache.GetOrAdd(lang, langKey =>
         {
             var file = Path.Combine(ResourcePath, $"messages.{langKey}.json");
-            if (!File.Exists(file)) file = Path.Combine(ResourcePath, "messages.en.json");
+            if (!File.Exists(file))
+            {
+                file = Path.Combine(ResourcePath, "messages.en.json");
+            }
+
             return JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(file))!;
         });
 

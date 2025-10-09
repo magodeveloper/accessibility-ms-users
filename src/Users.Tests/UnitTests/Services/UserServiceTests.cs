@@ -1,12 +1,12 @@
-using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Moq;
-using Users.Application;
-using Users.Application.Services;
-using Users.Application.Services.User;
-using Users.Domain.Entities;
-using Users.Infrastructure.Data;
 using Xunit;
+using FluentAssertions;
+using Users.Application;
+using Users.Domain.Entities;
+using Users.Application.Services;
+using Users.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Users.Application.Services.User;
 
 namespace Users.Tests.UnitTests.Services;
 

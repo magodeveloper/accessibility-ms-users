@@ -1,9 +1,9 @@
+using Xunit;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Users.Application.Services.Preference;
 using Users.Domain.Entities;
 using Users.Infrastructure.Data;
-using Xunit;
+using Microsoft.EntityFrameworkCore;
+using Users.Application.Services.Preference;
 
 namespace Users.Tests.UnitTests.Services;
 

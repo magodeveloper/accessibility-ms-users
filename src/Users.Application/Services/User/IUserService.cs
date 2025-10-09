@@ -1,6 +1,6 @@
+using Users.Application.Dtos;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Users.Application.Dtos;
 
 namespace Users.Application.Services.User
 {

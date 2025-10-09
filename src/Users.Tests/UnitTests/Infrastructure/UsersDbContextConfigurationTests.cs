@@ -1,8 +1,8 @@
 using Xunit;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Users.Infrastructure.Data;
 using Users.Domain.Entities;
+using Users.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Users.Tests.UnitTests.Infrastructure
 {

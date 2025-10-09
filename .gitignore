@@ -44,6 +44,8 @@ CodeCoverage/
 # Coverage reports (generated files)
 coverage/
 coverage-report/
+coverage-report-*/
+!coverage-report/
 coverage-dashboard/
 TestResults/
 src/**/coverage/
@@ -70,5 +72,11 @@ obj/
 .vscode/
 .git/
 .gitignore
+
+# Environment files (contain sensitive data)
 .env
+.env.development
+.env.production
+# Keep .env.example as template (not ignored)
+
 tests/**/TestResults/

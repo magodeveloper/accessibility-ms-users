@@ -1,18 +1,20 @@
+using Moq;
 using FluentAssertions;
+using Users.Domain.Entities;
+using Users.Application.Dtos;
+using Users.Api.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
-using Users.Api.Controllers;
-using Users.Application.Dtos;
 using Users.Application.Services.Preference;
-using Users.Domain.Entities;
+using Users.Application.Services.UserContext;
 
 namespace Users.Tests.Controllers;
 
 public class PreferenceControllerTests : IDisposable
 {
     private readonly Mock<IPreferenceService> _mockPreferenceService;
+    private readonly Mock<IUserContext> _mockUserContext;
     private readonly PreferenceController _controller;
     private readonly ServiceProvider _serviceProvider;
     private bool _disposed = false;
@@ -21,11 +23,21 @@ public class PreferenceControllerTests : IDisposable
     {
         var services = new ServiceCollection();
         _mockPreferenceService = new Mock<IPreferenceService>();
+        _mockUserContext = new Mock<IUserContext>();
 
         services.AddSingleton(_mockPreferenceService.Object);
+        services.AddSingleton(_mockUserContext.Object);
         _serviceProvider = services.BuildServiceProvider();
 
-        _controller = new PreferenceController(_mockPreferenceService.Object);
+        // Configurar mock IUserContext - usuario autenticado como admin
+        _mockUserContext.Setup(x => x.IsAuthenticated).Returns(true);
+        _mockUserContext.Setup(x => x.UserId).Returns(1);
+        _mockUserContext.Setup(x => x.Email).Returns("test@example.com");
+        _mockUserContext.Setup(x => x.Role).Returns("Admin");
+        _mockUserContext.Setup(x => x.IsAdmin).Returns(true);
+        _mockUserContext.Setup(x => x.UserName).Returns("TestUser");
+
+        _controller = new PreferenceController(_mockPreferenceService.Object, _mockUserContext.Object);
 
         // Setup mock HTTP context para LanguageHelper
         var httpContext = new DefaultHttpContext();
@@ -640,4 +652,48 @@ public class PreferenceControllerTests : IDisposable
     }
 
     #endregion
+
+    // ===== Tests de autenticación =====
+
+    [Fact]
+    public async Task GetByUserEmail_NotAuthenticated_ReturnsUnauthorized()
+    {
+        // Arrange
+        _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+        var email = "test@example.com";
+
+        // Act
+        var result = await _controller.GetByUserEmail(email);
+
+        // Assert
+        result.Should().BeOfType<UnauthorizedObjectResult>();
+    }
+
+    [Fact]
+    public async Task Create_NotAuthenticated_ReturnsUnauthorized()
+    {
+        // Arrange
+        _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+        var dto = new PreferenceCreateDto(1, "2.1", "AA", "es", "light", "pdf", true, "standard", 14);
+
+        // Act
+        var result = await _controller.Create(dto);
+
+        // Assert
+        result.Should().BeOfType<UnauthorizedObjectResult>();
+    }
+
+    [Fact]
+    public async Task Delete_NotAuthenticated_ReturnsUnauthorized()
+    {
+        // Arrange
+        _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+        var preferenceId = 1;
+
+        // Act
+        var result = await _controller.Delete(preferenceId);
+
+        // Assert
+        result.Should().BeOfType<UnauthorizedObjectResult>();
+    }
 }

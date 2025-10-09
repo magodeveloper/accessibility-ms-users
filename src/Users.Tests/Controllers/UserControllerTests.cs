@@ -1,25 +1,37 @@
+using Moq;
 using Xunit;
 using FluentAssertions;
-using Moq;
+using System.Security.Claims;
+using Users.Domain.Entities;
+using Users.Application.Dtos;
+using Users.Api.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
-using Users.Api.Controllers;
 using Users.Application.Services.User;
-using Users.Application.Dtos;
-using Users.Domain.Entities;
-using System.Security.Claims;
+using Users.Application.Services.UserContext;
 
 namespace Users.Tests.Controllers
 {
     public class UserControllerTests
     {
         private readonly Mock<IUserService> _mockUserService;
+        private readonly Mock<IUserContext> _mockUserContext;
         private readonly UserController _controller;
 
         public UserControllerTests()
         {
             _mockUserService = new Mock<IUserService>();
-            _controller = new UserController(_mockUserService.Object);
+            _mockUserContext = new Mock<IUserContext>();
+
+            // Configurar mock IUserContext - usuario autenticado como admin
+            _mockUserContext.Setup(x => x.IsAuthenticated).Returns(true);
+            _mockUserContext.Setup(x => x.UserId).Returns(1);
+            _mockUserContext.Setup(x => x.Email).Returns("test@example.com");
+            _mockUserContext.Setup(x => x.Role).Returns("Admin");
+            _mockUserContext.Setup(x => x.IsAdmin).Returns(true);
+            _mockUserContext.Setup(x => x.UserName).Returns("TestUser");
+
+            _controller = new UserController(_mockUserService.Object, _mockUserContext.Object);
 
             // Setup HttpContext for language helper
             var httpContext = new DefaultHttpContext();
@@ -427,6 +439,112 @@ namespace Users.Tests.Controllers
             // Assert
             var statusCodeResult = result.Should().BeOfType<ObjectResult>().Subject;
             statusCodeResult.StatusCode.Should().Be(500);
+        }
+
+        // ===== Tests de autenticación =====
+
+        [Fact]
+        public async Task GetByEmail_NotAuthenticated_ReturnsUnauthorized()
+        {
+            // Arrange
+            _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+            var email = "test@example.com";
+
+            // Act
+            var result = await _controller.GetByEmail(email);
+
+            // Assert
+            var unauthorizedResult = result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
+            unauthorizedResult.StatusCode.Should().Be(401);
+        }
+
+        [Fact]
+        public async Task DeleteByEmail_NotAuthenticated_ReturnsUnauthorized()
+        {
+            // Arrange
+            _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+            var email = "test@example.com";
+
+            // Act
+            var result = await _controller.DeleteByEmail(email);
+
+            // Assert
+            var unauthorizedResult = result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
+            unauthorizedResult.StatusCode.Should().Be(401);
+        }
+
+        [Fact]
+        public async Task GetById_NotAuthenticated_ReturnsUnauthorized()
+        {
+            // Arrange
+            _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+            var userId = 1;
+
+            // Act
+            var result = await _controller.GetById(userId);
+
+            // Assert
+            var unauthorizedResult = result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
+            unauthorizedResult.StatusCode.Should().Be(401);
+        }
+
+        [Fact]
+        public async Task GetAll_NotAuthenticated_ReturnsUnauthorized()
+        {
+            // Arrange
+            _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+
+            // Act
+            var result = await _controller.GetAll();
+
+            // Assert
+            var unauthorizedResult = result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
+            unauthorizedResult.StatusCode.Should().Be(401);
+        }
+
+        [Fact]
+        public async Task Delete_NotAuthenticated_ReturnsUnauthorized()
+        {
+            // Arrange
+            _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+            var userId = 1;
+
+            // Act
+            var result = await _controller.Delete(userId);
+
+            // Assert
+            var unauthorizedResult = result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
+            unauthorizedResult.StatusCode.Should().Be(401);
+        }
+
+        [Fact]
+        public async Task Update_NotAuthenticated_ReturnsUnauthorized()
+        {
+            // Arrange
+            _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+            var userId = 1;
+            var dto = new UserPatchDto("updated", null, null, null, null, null, null, null);
+
+            // Act
+            var result = await _controller.Update(userId, dto);
+
+            // Assert
+            var unauthorizedResult = result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
+            unauthorizedResult.StatusCode.Should().Be(401);
+        }
+
+        [Fact]
+        public async Task DeleteAllData_NotAuthenticated_ReturnsUnauthorized()
+        {
+            // Arrange
+            _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+
+            // Act
+            var result = await _controller.DeleteAllData();
+
+            // Assert
+            var unauthorizedResult = result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
+            unauthorizedResult.StatusCode.Should().Be(401);
         }
     }
 }

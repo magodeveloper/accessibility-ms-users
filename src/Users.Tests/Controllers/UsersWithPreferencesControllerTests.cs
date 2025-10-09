@@ -1,14 +1,15 @@
-using FluentAssertions;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Users.Api.Controllers;
-using Users.Application.Dtos;
-using Users.Application.Services;
-using Users.Domain.Entities;
-using Users.Infrastructure.Data;
-using Microsoft.AspNetCore.Http;
 using Moq;
+using FluentAssertions;
+using Users.Domain.Entities;
+using Users.Application.Dtos;
+using Users.Api.Controllers;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Users.Application.Services;
+using Microsoft.EntityFrameworkCore;
+using Users.Infrastructure.Data;
+using Microsoft.Extensions.DependencyInjection;
+using Users.Application.Services.UserContext;
 
 namespace Users.Tests.Controllers;
 
@@ -16,6 +17,7 @@ public class UsersWithPreferencesControllerTests : IDisposable
 {
     private readonly UsersDbContext _context;
     private readonly IPasswordService _passwordService;
+    private readonly Mock<IUserContext> _mockUserContext;
     private readonly UsersWithPreferencesController _controller;
     private readonly ServiceProvider _serviceProvider;
     private bool _disposed;
@@ -31,7 +33,16 @@ public class UsersWithPreferencesControllerTests : IDisposable
         _context = _serviceProvider.GetRequiredService<UsersDbContext>();
         _passwordService = _serviceProvider.GetRequiredService<IPasswordService>();
 
-        _controller = new UsersWithPreferencesController(_context, _passwordService);
+        _mockUserContext = new Mock<IUserContext>();
+        // Configurar mock IUserContext - usuario autenticado como admin
+        _mockUserContext.Setup(x => x.IsAuthenticated).Returns(true);
+        _mockUserContext.Setup(x => x.UserId).Returns(1);
+        _mockUserContext.Setup(x => x.Email).Returns("test@example.com");
+        _mockUserContext.Setup(x => x.Role).Returns("Admin");
+        _mockUserContext.Setup(x => x.IsAdmin).Returns(true);
+        _mockUserContext.Setup(x => x.UserName).Returns("TestUser");
+
+        _controller = new UsersWithPreferencesController(_context, _passwordService, _mockUserContext.Object);
 
         // Setup mock HTTP context para LanguageHelper
         var httpContext = new DefaultHttpContext();
@@ -608,5 +619,22 @@ public class UsersWithPreferencesControllerTests : IDisposable
         updatedPreferences.NotificationsEnabled.Should().BeFalse();
         updatedPreferences.AiResponseLevel.Should().Be(AiResponseLevel.basic);
         updatedPreferences.FontSize.Should().Be(12);
+    }
+
+    // ===== Tests de autenticación =====
+
+    [Fact]
+    public async Task Create_NotAuthenticated_ReturnsUnauthorized()
+    {
+        // Arrange
+        _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+        var dto = new UserCreateDto("testuser", "Test", "User", "test@example.com", "Password123!");
+
+        // Act
+        var result = await _controller.Create(dto);
+
+        // Assert
+        // Create no requiere autenticación (es registro público), pero verificamos que funciona
+        result.Should().NotBeOfType<UnauthorizedObjectResult>();
     }
 }

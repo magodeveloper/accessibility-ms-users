@@ -19,7 +19,10 @@ namespace Users.Application.Services.Preference
         {
             // Evitar duplicados por user_id
             var exists = await _db.Preferences.AnyAsync(p => p.UserId == preference.UserId);
-            if (exists) throw new InvalidOperationException(Localization.Get("Error_PreferencesExist"));
+            if (exists)
+            {
+                throw new InvalidOperationException(Localization.Get("Error_PreferencesExist"));
+            }
 
             var now = DateTime.UtcNow;
             preference.CreatedAt = now;
@@ -42,7 +45,10 @@ namespace Users.Application.Services.Preference
         public async Task<Users.Domain.Entities.Preference?> UpdatePreferenceAsync(Users.Domain.Entities.Preference preference)
         {
             var p = await _db.Preferences.FirstOrDefaultAsync(x => x.UserId == preference.UserId);
-            if (p is null) return null;
+            if (p is null)
+            {
+                return null;
+            }
 
             // Actualizar campos
             p.WcagVersion = preference.WcagVersion;
@@ -61,7 +67,11 @@ namespace Users.Application.Services.Preference
         public async Task<bool> DeletePreferenceAsync(int id)
         {
             var p = await _db.Preferences.FindAsync(id);
-            if (p is null) return false;
+            if (p is null)
+            {
+                return false;
+            }
+
             _db.Preferences.Remove(p);
             await _db.SaveChangesAsync();
             return true;

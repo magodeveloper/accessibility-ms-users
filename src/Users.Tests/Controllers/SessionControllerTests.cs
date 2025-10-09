@@ -1,17 +1,19 @@
+using Moq;
 using FluentAssertions;
+using Users.Application.Dtos;
+using Users.Api.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Moq;
-using Users.Api.Controllers;
-using Users.Application.Dtos;
 using Users.Application.Services.Session;
+using Microsoft.Extensions.DependencyInjection;
+using Users.Application.Services.UserContext;
 
 namespace Users.Tests.Controllers;
 
 public class SessionControllerTests : IDisposable
 {
     private readonly Mock<ISessionService> _mockSessionService;
+    private readonly Mock<IUserContext> _mockUserContext;
     private readonly SessionController _controller;
     private readonly ServiceProvider _serviceProvider;
     private bool _disposed = false;
@@ -20,11 +22,21 @@ public class SessionControllerTests : IDisposable
     {
         var services = new ServiceCollection();
         _mockSessionService = new Mock<ISessionService>();
+        _mockUserContext = new Mock<IUserContext>();
 
         services.AddSingleton(_mockSessionService.Object);
+        services.AddSingleton(_mockUserContext.Object);
         _serviceProvider = services.BuildServiceProvider();
 
-        _controller = new SessionController(_mockSessionService.Object);
+        // Configurar mock IUserContext - usuario autenticado como admin
+        _mockUserContext.Setup(x => x.IsAuthenticated).Returns(true);
+        _mockUserContext.Setup(x => x.UserId).Returns(1);
+        _mockUserContext.Setup(x => x.Email).Returns("test@example.com");
+        _mockUserContext.Setup(x => x.Role).Returns("Admin");
+        _mockUserContext.Setup(x => x.IsAdmin).Returns(true);
+        _mockUserContext.Setup(x => x.UserName).Returns("TestUser");
+
+        _controller = new SessionController(_mockSessionService.Object, _mockUserContext.Object);
 
         // Setup mock HTTP context para LanguageHelper
         var httpContext = new DefaultHttpContext();
@@ -375,5 +387,62 @@ public class SessionControllerTests : IDisposable
         // Assert
         result.Should().BeOfType<NotFoundObjectResult>();
         _mockSessionService.Verify(x => x.DeleteSessionsByUserIdAsync(userId), Times.Once);
+    }
+
+    // ===== Tests de autenticación =====
+
+    [Fact]
+    public async Task GetAll_NotAuthenticated_ReturnsUnauthorized()
+    {
+        // Arrange
+        _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+
+        // Act
+        var result = await _controller.GetAll();
+
+        // Assert
+        result.Should().BeOfType<UnauthorizedObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetByUserId_NotAuthenticated_ReturnsUnauthorized()
+    {
+        // Arrange
+        _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+        var userId = 1;
+
+        // Act
+        var result = await _controller.GetByUserId(userId);
+
+        // Assert
+        result.Should().BeOfType<UnauthorizedObjectResult>();
+    }
+
+    [Fact]
+    public async Task Delete_NotAuthenticated_ReturnsUnauthorized()
+    {
+        // Arrange
+        _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+        var sessionId = 1;
+
+        // Act
+        var result = await _controller.Delete(sessionId);
+
+        // Assert
+        result.Should().BeOfType<UnauthorizedObjectResult>();
+    }
+
+    [Fact]
+    public async Task DeleteByUserId_NotAuthenticated_ReturnsUnauthorized()
+    {
+        // Arrange
+        _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+        var userId = 1;
+
+        // Act
+        var result = await _controller.DeleteByUserId(userId);
+
+        // Assert
+        result.Should().BeOfType<UnauthorizedObjectResult>();
     }
 }

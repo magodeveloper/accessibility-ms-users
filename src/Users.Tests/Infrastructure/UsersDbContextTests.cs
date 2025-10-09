@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using Users.Domain.Entities;
 using Users.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Users.Tests.Infrastructure;
 

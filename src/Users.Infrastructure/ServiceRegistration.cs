@@ -28,7 +28,7 @@ public static class ServiceRegistration
             {
                 opt.UseMySql(
                     cs,
-                    ServerVersion.AutoDetect(cs),
+                    new MySqlServerVersion(new Version(8, 4, 6)),
                     o => o.EnableRetryOnFailure(
                         maxRetryCount: 5,
                         maxRetryDelay: System.TimeSpan.FromSeconds(10),

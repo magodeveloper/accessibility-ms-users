@@ -682,6 +682,49 @@ function New-DashboardHtml {
             box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
         }
 
+        /* Test Stats Flexbox */
+        .test-stats-flex {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        .stat-number-success {
+            color: #2ecc71;
+            font-size: 1.4em;
+        }
+
+        .stat-number-danger {
+            color: #e74c3c;
+            font-size: 1.4em;
+        }
+
+        .stat-number-warning {
+            color: #f39c12;
+            font-size: 1.4em;
+        }
+
+        /* List Styles */
+        .tech-list {
+            line-height: 1.8;
+        }
+
+        .arch-list {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        /* Assembly Excluded */
+        .assembly-excluded {
+            background: #e8f5e8;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .coverage-excluded {
+            background: #95a5a6;
+        }
+
         /* Responsive Design */
         @media (max-width: 1024px) and (min-width: 769px) {
             .stats-grid,
@@ -727,7 +770,7 @@ function New-DashboardHtml {
                 <h3>📊 Cobertura Total</h3>
                 <div class="big-number $(if ($CoverageData.LineRate -lt 70) { 'warning' } elseif ($CoverageData.LineRate -lt 50) { 'danger' })">$($CoverageData.LineRate)%</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: $($CoverageData.LineRate)%">
+                    <div class="progress-fill" data-width="$($CoverageData.LineRate)%">
                         <div class="progress-text">$(if ($CoverageData.LineRate -ge 90) { 'Excelente' } elseif ($CoverageData.LineRate -ge 70) { 'Bueno' } else { 'Mejorable' })</div>
                     </div>
                 </div>
@@ -738,17 +781,17 @@ function New-DashboardHtml {
             <div class="stat-card">
                 <h3>🧪 Tests Ejecutados</h3>
                 <div class="big-number">$($TestResults.Total)</div>
-                <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                <div class="test-stats-flex">
                     <div>
-                        <strong style="color: #2ecc71; font-size: 1.4em;">$($TestResults.Passed)</strong><br>
+                        <strong class="stat-number-success">$($TestResults.Passed)</strong><br>
                         <small>✅ Exitosos</small>
                     </div>
                     <div>
-                        <strong style="color: $(if ($TestResults.Failed -gt 0) { '#e74c3c' } else { '#2ecc71' }); font-size: 1.4em;">$($TestResults.Failed)</strong><br>
+                        <strong class="$(if ($TestResults.Failed -gt 0) { 'stat-number-danger' } else { 'stat-number-success' })">$($TestResults.Failed)</strong><br>
                         <small>❌ Fallidos</small>
                     </div>
                     <div>
-                        <strong style="color: $(if ($successRate -ge 95) { '#2ecc71' } elseif ($successRate -ge 80) { '#f39c12' } else { '#e74c3c' }); font-size: 1.4em;">$successRate%</strong><br>
+                        <strong class="$(if ($successRate -ge 95) { 'stat-number-success' } elseif ($successRate -ge 80) { 'stat-number-warning' } else { 'stat-number-danger' })">$successRate%</strong><br>
                         <small>🎯 Tasa de éxito</small>
                     </div>
                 </div>
@@ -758,7 +801,7 @@ function New-DashboardHtml {
                 <h3>⚡ Performance</h3>
                 <div class="big-number">$([math]::Round($TestResults.Duration, 1))s</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: $(if ($TestResults.Duration -lt 10) { 90 } elseif ($TestResults.Duration -lt 30) { 70 } else { 50 })%">
+                    <div class="progress-fill" data-width="$(if ($TestResults.Duration -lt 10) { 90 } elseif ($TestResults.Duration -lt 30) { 70 } else { 50 })%">
                         <div class="progress-text">$(if ($TestResults.Duration -lt 10) { 'Excelente' } elseif ($TestResults.Duration -lt 30) { 'Bueno' } else { 'Lento' })</div>
                     </div>
                 </div>
@@ -771,10 +814,10 @@ function New-DashboardHtml {
             <div class="detail-card">
                 <h3>🏗️ Coverage por Assembly</h3>
                 $assemblyRows
-                <div class="assembly-row" style="background: #e8f5e8; padding: 8px; border-radius: 8px;">
+                <div class="assembly-row assembly-excluded">
                     <div class="assembly-name">✅ Users.Infrastructure</div>
                     <div class="assembly-coverage">
-                        <div class="coverage-badge" style="background: #95a5a6;">0% (excluido)</div>
+                        <div class="coverage-badge coverage-excluded">0% (excluido)</div>
                         <small>Omitido del cálculo</small>
                     </div>
                 </div>
@@ -782,7 +825,7 @@ function New-DashboardHtml {
             
             <div class="detail-card">
                 <h3>⚙️ Configuración Técnica</h3>
-                <ul style="line-height: 1.8;">
+                <ul class="tech-list">
                     <li><strong>Framework:</strong> .NET 9</li>
                     <li><strong>Test Framework:</strong> xUnit</li>
                     <li><strong>Mocking:</strong> Moq</li>
@@ -797,7 +840,7 @@ function New-DashboardHtml {
                 <h3>📁 Arquitectura</h3>
                 <div class="big-number">.NET 9</div>
                 <p>Sistema construido con:</p>
-                <ul style="margin-top: 10px; padding-left: 20px;">
+                <ul class="arch-list">
                     <li>Entity Framework Core + MySQL</li>
                     <li>xUnit + FluentAssertions</li>
                     <li>Clean Architecture</li>
@@ -815,11 +858,13 @@ function New-DashboardHtml {
         document.addEventListener('DOMContentLoaded', function() {
             const progressBars = document.querySelectorAll('.progress-fill');
             progressBars.forEach(bar => {
-                const width = bar.style.width;
-                bar.style.width = '0%';
-                setTimeout(() => {
-                    bar.style.width = width;
-                }, 500);
+                const targetWidth = bar.getAttribute('data-width');
+                if (targetWidth) {
+                    bar.style.width = '0%';
+                    setTimeout(() => {
+                        bar.style.width = targetWidth;
+                    }, 500);
+                }
             });
         });
 

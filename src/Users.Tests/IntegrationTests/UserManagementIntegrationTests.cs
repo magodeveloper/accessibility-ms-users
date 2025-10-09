@@ -1,10 +1,10 @@
-using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using Users.Tests.Infrastructure;
 using Xunit;
+using System.Net;
+using System.Text.Json;
+using FluentAssertions;
+using System.Net.Http.Json;
+using Users.Tests.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Users.Tests.IntegrationTests;
 
@@ -21,7 +21,7 @@ public class UserManagementIntegrationTests : IClassFixture<TestWebApplicationFa
     public async Task UserCRUD_ShouldWorkCompletely()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient(); // Cliente autenticado para todas las operaciones
         var email = "usercrud@integration.test";
         var password = "UserCrud123!";
         var userDto = new
@@ -105,7 +105,7 @@ public class UserManagementIntegrationTests : IClassFixture<TestWebApplicationFa
     public async Task CreateUser_ShouldPreventDuplicateEmail()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
         var email = "duplicate@test.com";
         var userDto1 = new { nickname = "user1", name = "User", lastname = "One", email, password = "Password123!" };
         var userDto2 = new { nickname = "user2", name = "User", lastname = "Two", email, password = "Password123!" };
@@ -132,7 +132,7 @@ public class UserManagementIntegrationTests : IClassFixture<TestWebApplicationFa
     public async Task CreateUser_ShouldPreventDuplicateNickname()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
         var nickname = "duplicatenick";
         var userDto1 = new { nickname, name = "User", lastname = "One", email = "user1@test.com", password = "Password123!" };
         var userDto2 = new { nickname, name = "User", lastname = "Two", email = "user2@test.com", password = "Password123!" };
@@ -166,7 +166,7 @@ public class UserManagementIntegrationTests : IClassFixture<TestWebApplicationFa
     public async Task CreateUser_ShouldValidateRequiredFields(string nickname, string name, string lastname, string email, string password)
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
         var userDto = new { nickname, name, lastname, email, password };
 
         // Act
@@ -180,7 +180,7 @@ public class UserManagementIntegrationTests : IClassFixture<TestWebApplicationFa
     public async Task UpdateUser_ShouldPreventEmailConflict()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
         var user1Email = "updateuser1@test.com";
         var user2Email = "updateuser2@test.com";
 
@@ -212,7 +212,7 @@ public class UserManagementIntegrationTests : IClassFixture<TestWebApplicationFa
     public async Task DeleteAllData_ShouldCleanDatabase()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
 
         // Create some test data
         var userDto1 = new { nickname = "deleteall1", name = "Delete", lastname = "All1", email = "deleteall1@test.com", password = "Password123!" };

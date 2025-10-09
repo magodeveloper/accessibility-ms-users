@@ -1,1866 +1,449 @@
-# 👥 accessibility-ms-users
+# 👥 Accessibility Users Service
 
-## 📋 Descripción del Proyecto
+[![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![Tests](https://img.shields.io/badge/tests-386%2F386-brightgreen)](test-dashboard.html)
+[![Coverage](https://img.shields.io/badge/coverage-94.71%25-brightgreen)](coverage-report/index.html)
+[![License](https://img.shields.io/badge/license-Proprietary-red)](LICENSE)
 
-**accessibility-ms-users** es un microservicio de gestión de usuarios y preferencias de accesibilidad desarrollado en **.NET 9.0** con **Entity Framework Core** y **MySQL**. Forma parte del ecosistema de accesibilidad digital y proporciona servicios completos de autenticación, autorización y gestión de configuraciones de usuario para aplicaciones de accesibilidad web.
+> **Microservicio de gestión de usuarios y autenticación desarrollado en .NET 9 con Clean Architecture. Proporciona gestión completa de usuarios, preferencias de accesibilidad, sesiones y autenticación JWT.**
 
-El microservicio implementa **Clean Architecture** con separación clara de responsabilidades entre las capas API, Application, Domain e Infrastructure, garantizando mantenibilidad, testabilidad y escalabilidad.
+> ⚡ **Nota:** Este microservicio forma parte de un ecosistema donde el **Gateway** gestiona rate limiting, caching (Redis), circuit breaker y load balancing. El microservicio se enfoca en su lógica de dominio específica.
 
-## ⭐ Características Principales
+## 📋 Descripción
 
-### 🔐 Gestión de Usuarios y Autenticación
+Microservicio empresarial para:
 
-- **Registro de usuarios** con validación completa de datos
-- **Sistema de autenticación** basado en JWT con gestión de sesiones
-- **Gestión de preferencias de accesibilidad** personalizadas por usuario
-- **Eliminación cascada** de usuarios con datos asociados
-- **Reset de contraseñas** por email
+- **Gestión de usuarios** con operaciones CRUD completas
+- **Autenticación JWT** con login, logout y recuperación de contraseña
+- **Preferencias de accesibilidad** personalizadas por usuario
+- **Gestión de sesiones** con control de sesiones activas
+- **i18n integrado** con soporte multiidioma (es, en, pt)
 
-### 🌐 Internacionalización y APIs
+## ✨ Características
 
-- **API RESTful moderna** con rutas simplificadas (`/api/` sin versionado)
-- **Respuestas internacionalizadas** (español/inglés) según `Accept-Language`
-- **DTOs consistentes** para todas las respuestas (sin ciclos de entidades)
-- **Validación robusta** con FluentValidation
-- **Documentación OpenAPI/Swagger** integrada
+### 👤 Gestión de Usuarios
 
-### 🏗️ Arquitectura y Calidad
+- **CRUD completo** de usuarios con validación
+- Búsqueda por email con unicidad garantizada
+- Eliminación de usuarios y datos asociados
+- Creación de usuarios con preferencias incluidas
+- Actualización masiva de usuarios con preferencias
 
-- **Clean Architecture** con separación clara de capas
-- **Entity Framework Core** con migraciones automatizadas
-- **Pruebas de integración** automatizadas (6/6 tests passing)
-- **Docker ready** para despliegue en contenedores
-- **CI/CD friendly** con scripts automatizados
+### 🔐 Autenticación & Seguridad
 
-## 🏗️ Estructura del Proyecto
+- **JWT Authentication** con tokens seguros
+- Login con email/contraseña
+- Logout con invalidación de tokens
+- Reset de contraseña con confirmación por email
+- Confirmación de email para activación de cuentas
+
+### ⚙️ Preferencias de Accesibilidad
+
+- **Configuración personalizada** por usuario
+- Preferencias de contraste, tamaño de fuente, modo oscuro
+- Lector de pantalla, navegación por teclado
+- Animaciones reducidas y otras opciones WCAG
+- CRUD completo de preferencias
+
+### 📱 Gestión de Sesiones
+
+- **Control de sesiones activas** por usuario
+- Listado de todas las sesiones
+- Cierre de sesión específica por ID
+- Cierre masivo de sesiones por usuario
+- Auditoría de sesiones activas
+
+### 🌐 i18n & Accesibilidad
+
+- Soporte multiidioma (es, en, pt)
+- Mensajes de error localizados
+- Content negotiation automático
+- Headers de idioma en responses
+
+### 🏥 Health Checks
+
+- Database connectivity check
+- Application health monitoring
+- Memory usage tracking
+- Endpoints de salud personalizados
+
+## 🏗️ Arquitectura
 
 ```
-accessibility-ms-users/
-├── 📄 Users.sln                    # Solución principal de .NET
-├── 📄 Directory.Packages.props     # Gestión centralizada de paquetes NuGet
-├── 📄 global.json                  # Configuración del SDK de .NET
-├── 🐳 Dockerfile                   # Imagen Docker multi-stage optimizada
-├── 🐳 docker-compose.yml           # Orquestación de servicios (API + MySQL)
-├── 📄 coverlet.runsettings         # Configuración para cobertura de código
-├── �️ init-users-db.sql           # Script de inicialización de base de datos
-├── 🧪 init-test-databases.ps1      # Script de configuración de BD test (Windows)
-├── 🧪 init-test-databases.sh       # Script de configuración de BD test (Unix)
-├── 🧪 manage-tests.ps1             # Herramientas de testing automatizado
-├── 📄 test-dashboard.html          # Dashboard de visualización de resultados
-│
-├── 📁 src/                         # Código fuente principal
-│   ├── 🌐 Users.Api/               # Capa de presentación (API REST)
-│   │   ├── Controllers/            # Controladores REST
-│   │   │   ├── AuthController.cs   # Autenticación y sesiones
-│   │   │   ├── PreferenceController.cs # Gestión de preferencias
-│   │   │   ├── SessionController.cs # Gestión de sesiones
-│   │   │   ├── UserController.cs   # Gestión de usuarios
-│   │   │   └── UsersWithPreferencesController.cs # Operaciones combinadas
-│   │   ├── Helpers/                # Utilidades y helpers
-│   │   │   └── LanguageHelper.cs   # Detección de idioma i18n
-│   │   ├── Properties/             # Configuración de launchSettings
-│   │   ├── Resources/              # Archivos de recursos i18n
-│   │   │   ├── messages.en.json    # Mensajes en inglés
-│   │   │   └── messages.es.json    # Mensajes en español
-│   │   ├── appsettings.json        # Configuración base
-│   │   ├── appsettings.Development.json # Configuración desarrollo
-│   │   ├── appsettings.Production.json  # Configuración producción
-│   │   └── Program.cs              # Punto de entrada y configuración
-│   │
-│   ├── 📦 Users.Application/       # Capa de aplicación (casos de uso)
-│   │   ├── Dtos/                   # Data Transfer Objects
-│   │   │   ├── Auth/               # DTOs de autenticación
-│   │   │   ├── Preference/         # DTOs de preferencias
-│   │   │   ├── Session/            # DTOs de sesiones
-│   │   │   └── User/               # DTOs de usuarios
-│   │   ├── Services/               # Servicios de aplicación
-│   │   │   ├── Preference/         # Lógica de preferencias
-│   │   │   ├── Session/            # Lógica de sesiones
-│   │   │   └── User/               # Lógica de usuarios
-│   │   └── Validators/             # Validadores FluentValidation
-│   │
-│   ├── 🏛️ Users.Domain/            # Capa de dominio (entidades)
-│   │   ├── Entities/               # Entidades del dominio
-│   │   │   ├── Preference.cs       # Entidad de preferencias de accesibilidad
-│   │   │   ├── Session.cs          # Entidad de sesiones de usuario
-│   │   │   └── User.cs             # Entidad principal de usuario
-│   │   └── Enums/                  # Enumeraciones del dominio
-│   │       ├── AiResponseLevel.cs  # Niveles de respuesta IA
-│   │       ├── Language.cs         # Idiomas soportados
-│   │       ├── ReportFormat.cs     # Formatos de reporte
-│   │       ├── UserRole.cs         # Roles de usuario
-│   │       ├── UserStatus.cs       # Estados de usuario
-│   │       ├── VisualTheme.cs      # Temas visuales
-│   │       └── WcagLevel.cs        # Niveles WCAG
-│   │
-│   └── 🔧 Users.Infrastructure/    # Capa de infraestructura
-│       ├── Data/                   # Contexto y configuración de BD
-│       │   ├── Configurations/     # Configuración de entidades EF
-│       │   │   ├── PreferenceConfiguration.cs
-│       │   │   ├── SessionConfiguration.cs
-│       │   │   └── UserConfiguration.cs
-│       │   └── UsersDbContext.cs   # Contexto principal de Entity Framework
-│       ├── Services/               # Servicios de infraestructura
-│       │   ├── BcryptPasswordService.cs     # Servicio de hash de contraseñas
-│       │   └── SessionTokenService.cs      # Servicio de tokens JWT
-│       └── DependencyInjection.cs  # Configuración de inyección de dependencias
-│
-└── 📁 TestResults/                 # Resultados de pruebas y cobertura
-    ├── coverage.cobertura.xml      # Reporte de cobertura
-    └── test-results.trx            # Resultados de pruebas
+┌───────────────────────────────────────────────────┐
+│          👥 USERS MICROSERVICE API                │
+│                (Port 8081)                        │
+│                                                   │
+│  ┌─────────────┐  ┌─────────────┐  ┌──────────┐ │
+│  │ Controllers │  │  Middleware │  │  Health  │ │
+│  │  (6 APIs)   │  │  (Context)  │  │  Checks  │ │
+│  └─────────────┘  └─────────────┘  └──────────┘ │
+│         │                │               │       │
+│         └────────────────┴───────────────┘       │
+│                      │                           │
+│              ┌───────▼───────┐                   │
+│              │  APPLICATION  │                   │
+│              │   Services    │                   │
+│              │   Use Cases   │                   │
+│              └───────┬───────┘                   │
+│                      │                           │
+│              ┌───────▼───────┐                   │
+│              │    DOMAIN     │                   │
+│              │   Entities    │                   │
+│              │  Interfaces   │                   │
+│              └───────┬───────┘                   │
+│                      │                           │
+│              ┌───────▼───────┐                   │
+│              │INFRASTRUCTURE │                   │
+│              │   EF Core     │                   │
+│              │   Repositories│                   │
+│              └───────┬───────┘                   │
+└──────────────────────┼───────────────────────────┘
+                       │
+                       ▼
+               ┌──────────────┐
+               │  MySQL DB    │
+               │  (users_db)  │
+               └──────────────┘
 ```
 
-### 🎯 Arquitectura Clean Architecture
+**Clean Architecture con 4 capas:**
 
-```mermaid
-graph TB
-    A[🌐 Users.Api<br/>Controllers, Middleware] --> B[📦 Users.Application<br/>Services, DTOs, Validators]
-    B --> C[🏛️ Users.Domain<br/>Entities, Enums]
-    B --> D[� Users.Infrastructure<br/>DbContext, Services]
-    D --> C
-    D --> E[(🗄️ MySQL Database)]
+- **API:** Controllers, Middleware, Health Checks
+- **Application:** Services, DTOs, Use Cases
+- **Domain:** Entities, Interfaces, Business Logic
+- **Infrastructure:** EF Core, Repositories, MySQL
 
-    style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style C fill:#fff3e0
-    style D fill:#e8f5e8
-    style E fill:#fce4ec
-```
+## 🚀 Quick Start
 
-## 🗄️ Modelo de Datos
+### Requisitos
 
-### Entidades Principales
+- .NET 9.0 SDK
+- MySQL 8.0+
+- Docker & Docker Compose (opcional)
 
-#### 👤 User (Usuario)
-
-```csharp
-public sealed class User
-{
-    public int Id { get; set; }                    // ID único del usuario
-    public string Nickname { get; set; }           // Nombre de usuario único
-    public string Name { get; set; }               // Nombre real
-    public string Lastname { get; set; }           // Apellido
-    public string Email { get; set; }              // Email único (índice)
-    public string Password { get; set; }           // Contraseña hasheada
-    public UserRole Role { get; set; }             // user, admin, moderator
-    public UserStatus Status { get; set; }         // active, inactive, suspended
-    public bool EmailConfirmed { get; set; }       // Confirmación de email
-    public DateTime? LastLogin { get; set; }       // Último acceso
-    public DateTime RegistrationDate { get; set; } // Fecha de registro
-    public DateTime CreatedAt { get; set; }        // Fecha de creación
-    public DateTime UpdatedAt { get; set; }        // Última actualización
-
-    // Relaciones
-    public Preference? Preference { get; set; }    // Preferencias 1:1
-    public ICollection<Session> Sessions { get; set; } // Sesiones 1:N
-}
-```
-
-#### ⚙️ Preference (Preferencias de Accesibilidad)
-
-```csharp
-public sealed class Preference
-{
-    public int Id { get; set; }                    // ID único de preferencia
-    public int UserId { get; set; }                // FK hacia User
-    public string WcagVersion { get; set; }        // Versión WCAG (ej: "2.1", "2.2")
-    public WcagLevel WcagLevel { get; set; }       // A, AA, AAA
-    public Language Language { get; set; }         // es, en
-    public VisualTheme VisualTheme { get; set; }   // light, dark, high_contrast
-    public ReportFormat ReportFormat { get; set; } // pdf, html, json
-    public bool NotificationsEnabled { get; set; } // Notificaciones habilitadas
-    public AiResponseLevel? AiResponseLevel { get; set; } // basic, intermediate, advanced
-    public int FontSize { get; set; }              // Tamaño de fuente
-    public DateTime CreatedAt { get; set; }        // Fecha de creación
-    public DateTime UpdatedAt { get; set; }        // Última actualización
-
-    // Relaciones
-    public User User { get; set; }                 // Usuario asociado
-}
-```
-
-#### 🔐 Session (Sesiones de Usuario)
-
-```csharp
-public sealed class Session
-{
-    public int Id { get; set; }                    // ID único de sesión
-    public int UserId { get; set; }                // FK hacia User
-    public string Token { get; set; }              // Token JWT
-    public DateTime CreatedAt { get; set; }        // Inicio de sesión
-    public DateTime ExpiresAt { get; set; }        // Expiración del token
-    public bool IsActive { get; set; }             // Estado de la sesión
-    public string? IpAddress { get; set; }         // Dirección IP
-    public string? UserAgent { get; set; }         // Agente de usuario
-
-    // Relaciones
-    public User User { get; set; }                 // Usuario asociado
-}
-```
-
-### 📊 Diagrama de Relaciones
-
-```mermaid
-erDiagram
-    USER ||--o| PREFERENCE : "has one"
-    USER ||--o{ SESSION : "has many"
-
-    USER {
-        int Id PK
-        string Nickname UK
-        string Name
-        string Lastname
-        string Email UK
-        string Password
-        enum UserRole
-        enum UserStatus
-        bool EmailConfirmed
-        datetime LastLogin
-        datetime RegistrationDate
-        datetime CreatedAt
-        datetime UpdatedAt
-    }
-
-    PREFERENCE {
-        int Id PK
-        int UserId FK
-        string WcagVersion
-        enum WcagLevel
-        enum Language
-        enum VisualTheme
-        enum ReportFormat
-        bool NotificationsEnabled
-        enum AiResponseLevel
-        int FontSize
-        datetime CreatedAt
-        datetime UpdatedAt
-    }
-
-    SESSION {
-        int Id PK
-        int UserId FK
-        string Token
-        datetime CreatedAt
-        datetime ExpiresAt
-        bool IsActive
-        string IpAddress
-        string UserAgent
-    }
-```
-
-## ⚙️ Configuración y Variables de Entorno
-
-### 🐳 Configuración Docker
-
-El proyecto utiliza **Docker Compose** para orquestar los servicios. La configuración soporta múltiples entornos a través de archivos `.env`:
-
-#### Archivo `.env.development` (Desarrollo)
-
-```env
-# Configuración de la API
-ASPNETCORE_ENVIRONMENT=Development
-ASPNETCORE_URLS=http://+:8081
-API_HOST_PORT=8081
-
-# Configuración de Base de Datos
-DB_NAME=usersdb
-DB_USER=msuser
-DB_PASSWORD=UsrApp2025SecurePass
-DB_ROOT_PASSWORD=aF3MK0ZuWMHHXyX1ZwWjmKoS4baBAUgL
-DB_PORT=3307
-
-# Configuración MySQL
-MYSQL_CHARSET=utf8mb4
-MYSQL_COLLATION=utf8mb4_unicode_ci
-```
-
-#### Archivo `.env.production` (Producción)
-
-```env
-# Configuración de la API
-ASPNETCORE_ENVIRONMENT=Production
-ASPNETCORE_URLS=http://+:8081
-API_HOST_PORT=8081
-
-# Configuración de Base de Datos (CAMBIAR EN PRODUCCIÓN)
-DB_NAME=usersdb_prod
-DB_USER=msuser_prod
-DB_PASSWORD=UsrApp2025SecurePassPROD
-DB_ROOT_PASSWORD=aF3MK0ZuWMHHXyX1ZwWjmKoS4baBAUgLPROD
-DB_PORT=3307
-
-# Configuración de Seguridad
-MYSQL_CHARSET=utf8mb4
-MYSQL_COLLATION=utf8mb4_unicode_ci
-ENABLE_SSL=true
-
-# Variables adicionales para producción
-CORS_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
-JWT_SECRET_KEY=your-super-secure-jwt-secret-key-here
-JWT_EXPIRY_HOURS=24
-```
-
-### 🔧 Configuración de la Aplicación
-
-#### appsettings.json (Base)
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning",
-      "Microsoft.EntityFrameworkCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Port=3306;Database=usersdb;Uid=msuser;Pwd=password;"
-  },
-  "JwtSettings": {
-    "SecretKey": "development-secret-key-min-32-chars",
-    "ExpiryHours": 24,
-    "Issuer": "AccessibilityUsersAPI",
-    "Audience": "AccessibilityClients"
-  }
-}
-```
-
-#### appsettings.Development.json
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Debug",
-      "Microsoft.AspNetCore": "Information",
-      "Microsoft.EntityFrameworkCore": "Information"
-    }
-  },
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Port=3307;Database=usersdb;Uid=msuser;Pwd=UsrApp2025SecurePass;"
-  }
-}
-```
-
-### 🔐 Configuración de Seguridad
-
-| Variable           | Descripción                          | Ejemplo                            | Requerido |
-| ------------------ | ------------------------------------ | ---------------------------------- | --------- |
-| `DB_ROOT_PASSWORD` | Contraseña root de MySQL             | `aF3MK0ZuWMHHXyX1ZwWjmKoS4baBAUgL` | ✅        |
-| `DB_PASSWORD`      | Contraseña del usuario de aplicación | `UsrApp2025SecurePass`             | ✅        |
-| `JWT_SECRET_KEY`   | Clave secreta para firmar JWT        | `your-32-char-secret-key`          | ✅ (Prod) |
-| `DB_PORT`          | Puerto externo de MySQL              | `3307`                             | ✅        |
-| `API_HOST_PORT`    | Puerto de la API                     | `8081`                             | ✅        |
-
-> ⚠️ **IMPORTANTE**: Las contraseñas mostradas son ejemplos para desarrollo. **CAMBIAR OBLIGATORIAMENTE** en producción.
-
-## 🐳 Instalación y Despliegue con Docker
-
-### 📋 Prerrequisitos
-
-- **Docker** 20.10 o superior
-- **Docker Compose** 2.0 o superior
-- **.NET 9.0 SDK** (para desarrollo local)
-- **MySQL 8.4** (incluido en docker-compose)
-
-### 🚀 Despliegue Rápido
-
-#### Desarrollo
+### Instalación Local
 
 ```bash
-# 1. Clonar el repositorio
-git clone <repository-url>
+# Clonar repositorio
+git clone https://github.com/your-org/accessibility-ms-users.git
 cd accessibility-ms-users
 
-# 2. Configurar variables de entorno
-cp .env.development.example .env.development
-# Editar .env.development con tus configuraciones
+# Configurar base de datos
+mysql -u root -p < init-users-db.sql
 
-# 3. Ejecutar con Docker Compose
-docker compose --env-file .env.development up --build
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus credenciales de MySQL
 
-# 4. Verificar que la API está funcionando
-curl http://localhost:8081/swagger
+# Restaurar dependencias
+dotnet restore
+
+# Compilar
+dotnet build --configuration Release
+
+# Ejecutar
+dotnet run --project src/Users.Api/Users.Api.csproj
 ```
 
-#### Producción
+### Uso con Docker Compose
 
 ```bash
-# 1. Configurar variables de producción
-cp .env.production.example .env.production
-# IMPORTANTE: Cambiar todas las contraseñas
+# Levantar todos los servicios
+docker-compose up -d
 
-# 2. Ejecutar en modo producción
-docker compose --env-file .env.production up -d --build
+# Ver logs
+docker-compose logs -f users-api
 
-# 3. Verificar estado de los servicios
-docker compose ps
-docker compose logs -f api
+# Verificar estado
+docker-compose ps
+
+# Detener servicios
+docker-compose down
 ```
 
-### 🔧 Configuración del docker-compose.yml
+### Verificación
+
+```bash
+# Health check
+curl http://localhost:8081/health
+
+# Crear usuario de prueba
+curl -X POST http://localhost:8081/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"Test123!"}'
+```
+
+## 📡 API Endpoints
+
+### 🔐 Autenticación (/api/Auth)
+
+| Método | Endpoint                   | Descripción                 |
+| ------ | -------------------------- | --------------------------- |
+| POST   | `/api/Auth/login`          | Login con email/password    |
+| POST   | `/api/Auth/logout`         | Logout y cierre de sesión   |
+| POST   | `/api/Auth/reset-password` | Reset de contraseña         |
+| POST   | `/api/Auth/confirm-email`  | Confirmar email del usuario |
+
+### 👤 Usuarios (/api/users)
+
+| Método | Endpoint              | Descripción                          |
+| ------ | --------------------- | ------------------------------------ |
+| GET    | `/api/users`          | Listar todos los usuarios            |
+| POST   | `/api/users`          | Crear nuevo usuario                  |
+| GET    | `/api/users/by-email` | Buscar usuario por email             |
+| DELETE | `/api/users`          | Eliminar usuario por ID              |
+| DELETE | `/api/users/by-email` | Eliminar usuario por email           |
+| DELETE | `/api/users/all-data` | Eliminar todos los datos del usuario |
+
+### 👥 Usuarios con Preferencias (/api/users-with-preferences)
+
+| Método | Endpoint                               | Descripción                       |
+| ------ | -------------------------------------- | --------------------------------- |
+| POST   | `/api/users-with-preferences`          | Crear usuario con preferencias    |
+| PATCH  | `/api/users-with-preferences/by-email` | Actualizar usuario y preferencias |
+
+### ⚙️ Preferencias (/api/preferences)
+
+| Método | Endpoint                   | Descripción                         |
+| ------ | -------------------------- | ----------------------------------- |
+| GET    | `/api/preferences/by-user` | Obtener preferencias por usuario ID |
+| POST   | `/api/preferences`         | Crear preferencias                  |
+| DELETE | `/api/preferences`         | Eliminar preferencias               |
+
+### 📱 Sesiones (/api/sessions)
+
+| Método | Endpoint                | Descripción                             |
+| ------ | ----------------------- | --------------------------------------- |
+| GET    | `/api/sessions`         | Listar todas las sesiones activas       |
+| GET    | `/api/sessions/user`    | Obtener sesiones por usuario            |
+| DELETE | `/api/sessions`         | Cerrar sesión específica por ID         |
+| DELETE | `/api/sessions/by-user` | Cerrar todas las sesiones de un usuario |
+
+### 🏥 Health (/health)
+
+| Método | Endpoint        | Descripción          |
+| ------ | --------------- | -------------------- |
+| GET    | `/health`       | Health check general |
+| GET    | `/health/ready` | Readiness probe      |
+| GET    | `/health/live`  | Liveness probe       |
+
+**Total: 25 endpoints disponibles**
+
+## 🧪 Testing
+
+### Estado de Cobertura
+
+**Estado General:** ✅ 386/386 tests exitosos (100%)  
+**Cobertura Total:** 94.71% (1290/1362 líneas cubiertas)
+
+| Capa                           | Cobertura | Tests                    | Estado |
+| ------------------------------ | --------- | ------------------------ | ------ |
+| **Users.Api**                  | 88.2%     | Controllers + Middleware | ✅     |
+| AuthController                 | 100%      | Login, Logout, Reset     | ✅     |
+| PreferenceController           | 99.1%     | CRUD Preferencias        | ✅     |
+| SessionController              | 94.5%     | Gestión Sesiones         | ✅     |
+| UserController                 | 93.1%     | CRUD Usuarios            | ✅     |
+| UsersWithPreferencesController | 100%      | Usuarios + Prefs         | ✅     |
+| **Users.Application**          | 95%+      | Services + DTOs          | ✅     |
+| **Users.Domain**               | 100%      | Entities + Interfaces    | ✅     |
+| **Users.Infrastructure**       | 85%+      | Repositories + EF        | ✅     |
+
+**Métricas detalladas:**
+
+- **Cobertura de líneas:** 94.71% (1290/1362)
+- **Cobertura de ramas:** 90.93%
+- **Tiempo de ejecución:** 17.6s para 386 tests
+- **Tasa de éxito:** 100%
+
+### Comandos de Testing
+
+```bash
+# Todos los tests con cobertura
+.\manage-tests.ps1 -GenerateCoverage -OpenReport
+
+# Solo tests unitarios
+.\manage-tests.ps1 -TestType Unit
+
+# Tests de integración
+.\manage-tests.ps1 -TestType Integration
+
+# Ver dashboard interactivo
+Start-Process .\test-dashboard.html
+```
+
+### Categorías de Tests
+
+**Unit Tests:**
+
+- Validación de entidades (User, Preference, Session)
+- Lógica de servicios (AuthService, UserService)
+- DTOs y mappers
+- Validadores de dominio
+
+**Integration Tests:**
+
+- Controllers con base de datos en memoria
+- Repositorios con MySQL real
+- Health checks completos
+- Middleware de contexto de usuario
+
+**E2E Tests:**
+
+- Flows completos de autenticación
+- Creación de usuario + preferencias
+- Gestión de sesiones activas
+- Recuperación de contraseña
+
+## 🐳 Deployment
+
+### Docker
+
+```dockerfile
+# Build image
+docker build -t accessibility-users:latest .
+
+# Run standalone
+docker run -d \
+  --name users-api \
+  -p 8081:8081 \
+  -e ConnectionStrings__UsersDb="Server=mysql;Database=users_db;..." \
+  -e Jwt__Secret="your-secret-key" \
+  accessibility-users:latest
+```
+
+### Docker Compose
 
 ```yaml
 version: "3.8"
 
 services:
-  api:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+  users-api:
+    image: accessibility-users:latest
     ports:
-      - "${API_HOST_PORT}:8081"
+      - "8081:8081"
     environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - ASPNETCORE_URLS=${ASPNETCORE_URLS}
-      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=${DB_NAME};Uid=${DB_USER};Pwd=${DB_PASSWORD};
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__UsersDb=Server=mysql-users;Database=users_db;Uid=root;Pwd=password
+      - Jwt__Secret=your-jwt-secret
+      - Jwt__Issuer=accessibility-platform
+      - Jwt__Audience=accessibility-api
     depends_on:
-      mysql:
-        condition: service_healthy
-    networks:
-      - users-network
-    restart: unless-stopped
+      - mysql-users
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 30s
-      timeout: 10s
-      retries: 3
 
-  mysql:
-    image: mysql:8.4
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+  mysql-users:
+    image: mysql:8.0
     ports:
-      - "${DB_PORT}:3306"
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=users_db
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./init-users-db.sql:/docker-entrypoint-initdb.d/init-users-db.sql:ro
-    networks:
-      - users-network
-    restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "mysqladmin",
-          "ping",
-          "-h",
-          "localhost",
-          "-u",
-          "root",
-          "-p${DB_ROOT_PASSWORD}",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - mysql-users-data:/var/lib/mysql
+      - ./init-users-db.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
-  mysql_data:
-
-networks:
-  users-network:
-    driver: bridge
+  mysql-users-data:
 ```
 
-### 🧪 Comandos de Gestión
+## ⚙️ Configuración
 
-#### Desarrollo y Testing
+### Variables de Entorno
 
 ```bash
-# Reconstruir sin caché
-docker compose --env-file .env.development build --no-cache
+# ASP.NET Core
+ASPNETCORE_ENVIRONMENT=Production|Development
+ASPNETCORE_URLS=http://+:8081
 
-# Ver logs en tiempo real
-docker compose logs -f api
-docker compose logs -f mysql
+# Base de Datos
+ConnectionStrings__UsersDb=Server=localhost;Database=users_db;Uid=root;Pwd=password
 
-# Ejecutar tests dentro del contenedor
-docker compose exec api dotnet test
+# JWT Configuration
+Jwt__Secret=your-super-secret-key-min-32-chars
+Jwt__Issuer=accessibility-platform
+Jwt__Audience=accessibility-api
+Jwt__ExpirationMinutes=60
 
-# Acceso directo a MySQL
-docker compose exec mysql mysql -u msuser -p usersdb
+# Email Configuration (para reset password)
+Email__SmtpHost=smtp.gmail.com
+Email__SmtpPort=587
+Email__SmtpUser=your-email@gmail.com
+Email__SmtpPassword=your-app-password
 
-# Limpiar datos de desarrollo
-curl -X DELETE http://localhost:8081/api/users/all-data
-```
-
-#### Gestión de Contenedores
-
-```bash
-# Parar servicios
-docker compose down
-
-# Parar y eliminar volúmenes (CUIDADO: elimina datos)
-docker compose down -v
-
-# Reiniciar solo la API
-docker compose restart api
-
-# Ver estado de servicios
-docker compose ps
-docker compose top
-```
-
-#### Monitoreo y Logs
-
-```bash
-# Estadísticas de recursos
-docker stats
-
-# Logs de los últimos 100 líneas
-docker compose logs --tail 100 api
-
-# Exportar logs a archivo
-docker compose logs api > api-logs.txt
-
-# Inspeccionar configuración
-docker compose config
-```
-
-## 🌐 API Endpoints
-
-### 📋 Resumen de Endpoints
-
-| Método   | Endpoint                           | Descripción                    | Estado |
-| -------- | ---------------------------------- | ------------------------------ | ------ |
-| `POST`   | `/api/users-with-preferences`      | Crear usuario con preferencias | ✅     |
-| `GET`    | `/api/users/by-email`              | Obtener usuario por email      | ✅     |
-| `DELETE` | `/api/users/by-email/{email}`      | Eliminar usuario por email     | ✅     |
-| `POST`   | `/api/auth/login`                  | Autenticar usuario             | ✅     |
-| `POST`   | `/api/auth/logout`                 | Cerrar sesión                  | ✅     |
-| `POST`   | `/api/auth/reset-password`         | Solicitar reset de contraseña  | ✅     |
-| `GET`    | `/api/preferences/by-user/{email}` | Obtener preferencias por email | ✅     |
-| `POST`   | `/api/preferences`                 | Crear preferencias             | ✅     |
-| `PATCH`  | `/api/preferences/{id}`            | Actualizar preferencias        | ✅     |
-| `DELETE` | `/api/sessions/by-user/{userId}`   | Eliminar sesiones de usuario   | ✅     |
-| `DELETE` | `/api/users/all-data`              | **ELIMINAR TODOS los datos**   | ⚠️     |
-
-### � Gestión de Usuarios
-
-#### POST /api/users-with-preferences
-
-Crea un usuario y sus preferencias por defecto en una sola operación.
-
-**Request:**
-
-```http
-POST /api/users-with-preferences
-Content-Type: application/json
-
-{
-  "nickname": "jdoe",
-  "name": "John",
-  "lastname": "Doe",
-  "email": "jdoe@email.com",
-  "password": "Test1234!"
-}
-```
-
-**Response 201:**
-
-```json
-{
-  "user": {
-    "id": 1,
-    "nickname": "jdoe",
-    "name": "John",
-    "lastname": "Doe",
-    "email": "jdoe@email.com",
-    "role": "user",
-    "status": "active",
-    "emailConfirmed": false,
-    "lastLogin": null,
-    "registrationDate": "2025-09-16T00:00:00Z",
-    "createdAt": "2025-09-16T00:00:00Z",
-    "updatedAt": "2025-09-16T00:00:00Z"
-  },
-  "preferences": {
-    "id": 1,
-    "userId": 1,
-    "wcagVersion": "2.1",
-    "wcagLevel": "AA",
-    "language": "es",
-    "visualTheme": "light",
-    "reportFormat": "pdf",
-    "notificationsEnabled": true,
-    "aiResponseLevel": "intermediate",
-    "fontSize": 14,
-    "createdAt": "2025-09-16T00:00:00Z",
-    "updatedAt": "2025-09-16T00:00:00Z"
-  }
-}
-```
-
-#### GET /api/users/by-email
-
-Obtiene información de un usuario por su email.
-
-**Request:**
-
-```http
-GET /api/users/by-email?email=jdoe@email.com
-```
-
-**Response 200:**
-
-```json
-{
-  "id": 1,
-  "nickname": "jdoe",
-  "name": "John",
-  "lastname": "Doe",
-  "email": "jdoe@email.com",
-  "role": "user",
-  "status": "active",
-  "emailConfirmed": false,
-  "lastLogin": "2025-09-16T12:30:00Z",
-  "registrationDate": "2025-09-16T00:00:00Z"
-}
-```
-
-#### DELETE /api/users/by-email/{email}
-
-Elimina un usuario y todas sus preferencias y sesiones asociadas.
-
-**Request:**
-
-```http
-DELETE /api/users/by-email/jdoe@email.com
-```
-
-**Response 200:**
-
-```json
-{
-  "message": "Usuario eliminado correctamente."
-}
-```
-
-### � Autenticación
-
-#### POST /api/auth/login
-
-Autentica un usuario y retorna token JWT con información completa.
-
-**Request:**
-
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "jdoe@email.com",
-  "password": "Test1234!"
-}
-```
-
-**Response 200:**
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresAt": "2025-09-17T12:30:00Z",
-  "user": {
-    "id": 1,
-    "nickname": "jdoe",
-    "name": "John",
-    "lastname": "Doe",
-    "email": "jdoe@email.com",
-    "role": "user",
-    "status": "active",
-    "emailConfirmed": false
-  },
-  "preferences": {
-    "id": 1,
-    "userId": 1,
-    "wcagVersion": "2.1",
-    "wcagLevel": "AA",
-    "language": "es",
-    "visualTheme": "light",
-    "reportFormat": "pdf",
-    "notificationsEnabled": true,
-    "aiResponseLevel": "intermediate",
-    "fontSize": 14
-  }
-}
-```
-
-#### POST /api/auth/logout
-
-Cierra la sesión activa del usuario.
-
-**Request:**
-
-```http
-POST /api/auth/logout
-Authorization: Bearer {token}
-```
-
-**Response 200:**
-
-```json
-{
-  "message": "Sesión cerrada correctamente."
-}
-```
-
-### ⚙️ Gestión de Preferencias
-
-#### GET /api/preferences/by-user/{email}
-
-Obtiene las preferencias de accesibilidad de un usuario por email.
-
-**Request:**
-
-```http
-GET /api/preferences/by-user/jdoe@email.com
-```
-
-**Response 200:**
-
-```json
-{
-  "id": 1,
-  "userId": 1,
-  "wcagVersion": "2.2",
-  "wcagLevel": "AAA",
-  "language": "en",
-  "visualTheme": "dark",
-  "reportFormat": "html",
-  "notificationsEnabled": false,
-  "aiResponseLevel": "advanced",
-  "fontSize": 16,
-  "createdAt": "2025-09-16T00:00:00Z",
-  "updatedAt": "2025-09-16T12:00:00Z"
-}
-```
-
-#### PATCH /api/preferences/{id}
-
-Actualiza parcialmente las preferencias de un usuario.
-
-**Request:**
-
-```http
-PATCH /api/preferences/1
-Content-Type: application/json
-
-{
-  "visualTheme": "dark",
-  "fontSize": 16,
-  "wcagLevel": "AAA"
-}
-```
-
-**Response 200:**
-
-```json
-{
-  "id": 1,
-  "userId": 1,
-  "wcagVersion": "2.1",
-  "wcagLevel": "AAA",
-  "language": "es",
-  "visualTheme": "dark",
-  "reportFormat": "pdf",
-  "notificationsEnabled": true,
-  "aiResponseLevel": "intermediate",
-  "fontSize": 16,
-  "updatedAt": "2025-09-16T12:00:00Z"
-}
-```
-
-### 🔐 Gestión de Sesiones
-
-#### DELETE /api/sessions/by-user/{userId}
-
-Elimina todas las sesiones activas de un usuario.
-
-**Request:**
-
-```http
-DELETE /api/sessions/by-user/1
-```
-
-**Response 200:**
-
-```json
-{
-  "message": "Sesiones eliminadas correctamente."
-}
-```
-
-### ⚠️ Operaciones Críticas
-
-#### DELETE /api/users/all-data
-
-**OPERACIÓN IRREVERSIBLE** - Elimina TODOS los datos de la base de datos.
-
-**Request:**
-
-```http
-DELETE /api/users/all-data
-```
-
-**Response 200:**
-
-```json
-{
-  "message": "Todos los datos (usuarios, preferencias y sesiones) han sido eliminados exitosamente. Base de datos limpia."
-}
-```
-
-> ⚠️ **ADVERTENCIA**: Esta operación elimina permanentemente:
->
-> - Todos los usuarios
-> - Todas las preferencias
-> - Todas las sesiones
-> - Resetea los AUTO_INCREMENT a 1
-
-**Casos de uso recomendados:**
-
-- ✅ Entornos de desarrollo
-- ✅ Testing automatizado
-- ✅ Demos y talleres
-- ❌ **NUNCA** en producción sin medidas adicionales
-
-## 🌍 Internacionalización (i18n)
-
-### �️ Detección Automática de Idioma
-
-La API detecta automáticamente el idioma preferido del cliente a través de la cabecera `Accept-Language` y responde en el idioma correspondiente.
-
-**Idiomas Soportados:**
-
-- 🇪🇸 **Español (es)** - Idioma por defecto
-- 🇺🇸 **Inglés (en)** - Idioma alternativo
-
-### 📝 Ejemplos de Uso
-
-```bash
-# Solicitud en español
-curl -H "Accept-Language: es" http://localhost:8081/api/users/by-email?email=invalid
-
-# Respuesta en español
-{
-  "error": "El email es obligatorio."
-}
-
-# Solicitud en inglés
-curl -H "Accept-Language: en" http://localhost:8081/api/users/by-email?email=invalid
-
-# Respuesta en inglés
-{
-  "error": "Email is required."
-}
-```
-
-### 🗂️ Estructura de Archivos i18n
-
-```
-src/Users.Api/Resources/
-├── messages.es.json    # Mensajes en español
-└── messages.en.json    # Mensajes en inglés
-```
-
-#### messages.es.json
-
-```json
-{
-  "EmailRequired": "El email es obligatorio.",
-  "UserNotFound": "Usuario no encontrado.",
-  "InvalidCredentials": "Credenciales inválidas.",
-  "UserCreatedSuccessfully": "Usuario creado exitosamente.",
-  "PreferencesUpdated": "Preferencias actualizadas correctamente.",
-  "SessionClosed": "Sesión cerrada correctamente.",
-  "UnexpectedError": "Ha ocurrido un error inesperado."
-}
-```
-
-#### messages.en.json
-
-```json
-{
-  "EmailRequired": "Email is required.",
-  "UserNotFound": "User not found.",
-  "InvalidCredentials": "Invalid credentials.",
-  "UserCreatedSuccessfully": "User created successfully.",
-  "PreferencesUpdated": "Preferences updated successfully.",
-  "SessionClosed": "Session closed successfully.",
-  "UnexpectedError": "An unexpected error occurred."
-}
-```
-
-### 🔧 Implementación Técnica
-
-La detección de idioma se implementa a través del `LanguageHelper`:
-
-```csharp
-public static class LanguageHelper
-{
-    public static string GetRequestLanguage(HttpRequest request)
-    {
-        var acceptLanguage = request.Headers["Accept-Language"].FirstOrDefault();
-
-        if (string.IsNullOrEmpty(acceptLanguage))
-            return "es"; // Español por defecto
-
-        if (acceptLanguage.StartsWith("en"))
-            return "en";
-
-        return "es"; // Fallback a español
-    }
-}
-```
-
-## 🛡️ Seguridad y Manejo de Errores
-
-### 🔐 Autenticación JWT
-
-El sistema utiliza **JSON Web Tokens (JWT)** para la autenticación con las siguientes características:
-
-- **Algoritmo**: HS256 (HMAC SHA-256)
-- **Expiración**: 24 horas (configurable)
-- **Issuer**: AccessibilityUsersAPI
-- **Audience**: AccessibilityClients
-
-#### Configuración JWT
-
-```json
-{
-  "JwtSettings": {
-    "SecretKey": "your-super-secure-secret-key-min-32-chars",
-    "ExpiryHours": 24,
-    "Issuer": "AccessibilityUsersAPI",
-    "Audience": "AccessibilityClients"
-  }
-}
-```
-
-### 🔒 Hash de Contraseñas
-
-Las contraseñas se almacenan utilizando **BCrypt** con los siguientes parámetros:
-
-- **Algoritmo**: BCrypt
-- **Work Factor**: 12 (configurable)
-- **Salt**: Generado automáticamente por BCrypt
-
-```csharp
-public class BcryptPasswordService : IPasswordService
-{
-    public string HashPassword(string password)
-    {
-        return BCrypt.Net.BCrypt.HashPassword(password, 12);
-    }
-
-    public bool VerifyPassword(string password, string hashedPassword)
-    {
-        return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
-    }
-}
-```
-
-### � Códigos de Respuesta HTTP
-
-| Código  | Descripción                | Ejemplo                        |
-| ------- | -------------------------- | ------------------------------ |
-| **200** | Operación exitosa          | Usuario obtenido correctamente |
-| **201** | Recurso creado             | Usuario y preferencias creados |
-| **400** | Error de validación        | Email es obligatorio           |
-| **401** | No autorizado              | Token JWT inválido             |
-| **404** | Recurso no encontrado      | Usuario no encontrado          |
-| **409** | Conflicto                  | Email ya existe                |
-| **500** | Error interno del servidor | Error inesperado               |
-
-### ⚠️ Ejemplos de Respuestas de Error
-
-#### Error de Validación (400)
-
-```json
-{
-  "error": "El email es obligatorio.",
-  "details": {
-    "field": "email",
-    "code": "EmailRequired"
-  }
-}
-```
-
-#### No Autorizado (401)
-
-```json
-{
-  "error": "Token de acceso inválido o expirado.",
-  "details": {
-    "code": "InvalidToken"
-  }
-}
-```
-
-#### Usuario No Encontrado (404)
-
-```json
-{
-  "error": "Usuario no encontrado.",
-  "details": {
-    "email": "user@example.com",
-    "code": "UserNotFound"
-  }
-}
-```
-
-#### Conflicto de Email (409)
-
-```json
-{
-  "error": "El email ya está registrado.",
-  "details": {
-    "email": "existing@example.com",
-    "code": "EmailAlreadyExists"
-  }
-}
-```
-
-#### Error Interno (500)
-
-```json
-{
-  "error": "Ha ocurrido un error inesperado.",
-  "details": {
-    "code": "InternalServerError",
-    "timestamp": "2025-09-16T12:30:00Z"
-  }
-}
-```
-
-### 🔒 Mejores Prácticas de Seguridad
-
-#### Configuración Recomendada para Producción
-
-1. **Variables de Entorno Seguras**
-
-```env
-JWT_SECRET_KEY=your-extremely-secure-random-key-min-32-characters
-DB_PASSWORD=VeryStrongPassword2025!@#$
-DB_ROOT_PASSWORD=AnotherVeryStrongRootPassword2025!@#$
-```
-
-2. **CORS Restrictivo**
-
-```json
-{
-  "AllowedOrigins": ["https://yourdomain.com", "https://app.yourdomain.com"],
-  "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  "AllowedHeaders": ["Content-Type", "Authorization", "Accept-Language"]
-}
-```
-
-3. **Rate Limiting**
-
-```json
-{
-  "RateLimiting": {
-    "PermitLimit": 100,
-    "Window": "00:01:00",
-    "QueueProcessingOrder": "OldestFirst"
-  }
-}
-```
-
-#### Validaciones de Seguridad
-
-- **Contraseñas**: Mínimo 8 caracteres, mayúsculas, minúsculas, números y símbolos
-- **Emails**: Validación RFC 5322 completa
-- **Tokens JWT**: Verificación de firma, expiración e issuer
-- **Sesiones**: Limpieza automática de sesiones expiradas
-
-## 🧪 Testing y Calidad del Código
-
-### ✅ Suite de Pruebas Automatizadas
-
-El proyecto incluye una suite completa de **pruebas de integración** que valida todos los endpoints críticos:
-
-```bash
-# Ejecutar todas las pruebas
-dotnet test --configuration Release --verbosity normal
-
-# Ejecutar pruebas con cobertura
-dotnet test --collect:"XPlat Code Coverage" --settings coverlet.runsettings
-
-# Resultado esperado: 6/6 tests passing ✅
-```
-
-### 🎯 Cobertura de Testing
-
-| Endpoint                               | Escenario de Prueba           | Estado | Descripción                                  |
-| -------------------------------------- | ----------------------------- | ------ | -------------------------------------------- |
-| `POST /api/users-with-preferences`     | Crear usuario completo        | ✅     | Crea usuario y preferencias en una operación |
-| `DELETE /api/users/by-email/{email}`   | Eliminar por email            | ✅     | Eliminación cascada de usuario y datos       |
-| `POST /api/auth/login`                 | Login exitoso                 | ✅     | Autenticación con retorno de datos completos |
-| `POST /api/preferences`                | Crear preferencias duplicadas | ✅     | Validación de conflictos y errores           |
-| `GET /api/preferences/by-user/{email}` | Obtener preferencias          | ✅     | Recuperación de configuraciones por email    |
-| `DELETE /api/users/all-data`           | Limpieza completa             | ✅     | Eliminación total de datos (desarrollo)      |
-
-### 🏗️ Infraestructura de Testing
-
-#### TestWebApplicationFactory
-
-```csharp
-public class TestWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram>
-    where TProgram : class
-{
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
-    {
-        builder.ConfigureServices(services =>
-        {
-            // Usar base de datos InMemory para tests
-            services.AddDbContext<UsersDbContext>(options =>
-            {
-                options.UseInMemoryDatabase("TestDatabase");
-            });
-        });
-    }
-}
-```
-
-#### Configuración de Pruebas
-
-- **Base de datos**: InMemory Database (aislamiento total)
-- **Framework**: xUnit con .NET 9
-- **HTTP Client**: TestWebApplicationFactory
-- **Validaciones**: Códigos de estado, estructura JSON, datos
-
-### 📊 Métricas de Calidad
-
-```bash
-# Generar reporte de cobertura
-dotnet test --collect:"XPlat Code Coverage"
-reportgenerator -reports:"TestResults/*/coverage.cobertura.xml" -targetdir:"TestResults/html" -reporttypes:"Html;JsonSummary"
-
-# Abrir dashboard de cobertura
-start TestResults/html/index.html
-```
-
-### 🗄️ Configuración de Base de Datos de Test
-
-Para pruebas que requieren base de datos real (opcional):
-
-#### Windows PowerShell
-
-```powershell
-.\init-test-databases.ps1
-```
-
-#### Linux/macOS
-
-```bash
-chmod +x ./init-test-databases.sh
-./init-test-databases.sh
-```
-
-**Configuración Automática:**
-
-- **Root Password**: `eJ6RO5aYXQLLacA5azaqoOsW8feFFYkP`
-- **Test User**: `testuser` / `TestApp2025SecurePass`
-- **Test Databases**: `usersdb_test`, `analysisdb_test`, `reportsdb_test`
-- **Puertos**: MySQL Test `3308`
-
-> 🔧 **Los scripts son idempotentes**: Pueden ejecutarse múltiples veces sin problemas.
-
-### 📈 Ejecutar Tests en CI/CD
-
-#### GitHub Actions Example
-
-```yaml
-name: Test Users Microservice
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "9.0.x"
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --no-restore --configuration Release
-
-      - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
-
-      - name: Generate Coverage Report
-        run: |
-          dotnet tool install -g dotnet-reportgenerator-globaltool
-          reportgenerator -reports:"TestResults/*/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"JsonSummary"
-
-      - name: Upload Coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage-report/
-```
-
-## 🚀 CI/CD y DevOps
-
-### 📦 Pipeline de Construcción
-
-#### Dockerfile Multi-Stage Optimizado
-
-```dockerfile
-# Build stage
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
-
-# Copy solution and project files
-COPY ["Users.sln", "."]
-COPY ["src/Users.Api/Users.Api.csproj", "src/Users.Api/"]
-COPY ["src/Users.Application/Users.Application.csproj", "src/Users.Application/"]
-COPY ["src/Users.Domain/Users.Domain.csproj", "src/Users.Domain/"]
-COPY ["src/Users.Infrastructure/Users.Infrastructure.csproj", "src/Users.Infrastructure/"]
-
-# Restore dependencies
-RUN dotnet restore "src/Users.Api/Users.Api.csproj"
-
-# Copy source code
-COPY . .
-
-# Build and publish
-WORKDIR "/src/src/Users.Api"
-RUN dotnet build "Users.Api.csproj" -c Release -o /app/build
-RUN dotnet publish "Users.Api.csproj" -c Release -o /app/publish
-
-# Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
-WORKDIR /app
-
-# Create non-root user
-RUN groupadd -r appgroup && useradd -r -g appgroup appuser
-RUN chown -R appuser:appgroup /app
-USER appuser
-
-# Copy published app
-COPY --from=build /app/publish .
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8081/health || exit 1
-
-EXPOSE 8081
-ENTRYPOINT ["dotnet", "Users.Api.dll"]
-```
-
-### 🔄 Scripts de Automatización
-
-#### manage-tests.ps1
-
-```powershell
-param(
-    [string]$Action = "run",
-    [switch]$Coverage,
-    [switch]$Report
-)
-
-switch ($Action) {
-    "run" {
-        Write-Host "🧪 Ejecutando pruebas..." -ForegroundColor Green
-        dotnet test --configuration Release --verbosity normal
-    }
-    "coverage" {
-        Write-Host "📊 Ejecutando pruebas con cobertura..." -ForegroundColor Green
-        dotnet test --collect:"XPlat Code Coverage" --settings coverlet.runsettings
-
-        if ($Report) {
-            Write-Host "📈 Generando reporte de cobertura..." -ForegroundColor Blue
-            reportgenerator -reports:"TestResults/*/coverage.cobertura.xml" -targetdir:"TestResults/html" -reporttypes:"Html;JsonSummary"
-            Start-Process "TestResults/html/index.html"
-        }
-    }
-    "clean" {
-        Write-Host "🧹 Limpiando resultados de pruebas..." -ForegroundColor Yellow
-        Remove-Item -Path "TestResults" -Recurse -Force -ErrorAction SilentlyContinue
-    }
-}
-```
-
-### 🌊 Integración Continua
-
-#### Pipeline Stages
-
-1. **📥 Checkout** - Obtener código fuente
-2. **🔧 Setup** - Configurar .NET 9.0 SDK
-3. **📦 Restore** - Restaurar dependencias NuGet
-4. **🔨 Build** - Compilar en modo Release
-5. **🧪 Test** - Ejecutar suite de pruebas
-6. **📊 Coverage** - Generar reporte de cobertura
-7. **🐳 Docker Build** - Construir imagen Docker
-8. **🚀 Deploy** - Desplegar a staging/producción
-
-#### Validaciones de Calidad
-
-- **✅ Build Success**: Sin errores de compilación
-- **✅ All Tests Pass**: 6/6 pruebas exitosas
-- **✅ Code Coverage**: >80% cobertura recomendada
-- **✅ Security Scan**: Análisis de vulnerabilidades
-- **✅ Docker Build**: Imagen construida exitosamente
-
-### 📊 Monitoreo y Observabilidad
-
-#### Health Checks
-
-```csharp
-app.UseHealthChecks("/health", new HealthCheckOptions
-{
-    ResponseWriter = async (context, report) =>
-    {
-        var response = new
-        {
-            status = report.Status.ToString(),
-            timestamp = DateTime.UtcNow,
-            duration = report.TotalDuration,
-            services = report.Entries.Select(e => new
-            {
-                name = e.Key,
-                status = e.Value.Status.ToString(),
-                duration = e.Value.Duration,
-                description = e.Value.Description
-            })
-        };
-
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
-    }
-});
-```
-
-#### Logging Configuration
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning",
-      "Microsoft.EntityFrameworkCore": "Warning",
-      "Users.Api": "Debug"
-    },
-    "Console": {
-      "IncludeScopes": true,
-      "TimestampFormat": "yyyy-MM-dd HH:mm:ss "
-    }
-  }
-}
-```
-
-### 🔍 Análisis de Performance
-
-#### Métricas Clave
-
-- **Response Time**: < 200ms para operaciones CRUD
-- **Throughput**: > 1000 requests/second
-- **Memory Usage**: < 256MB baseline
-- **Database Connections**: Pool optimizado
-- **Error Rate**: < 0.1% en producción
-
-## 🛠️ Desarrollo Local
-
-### 📋 Prerrequisitos de Desarrollo
-
-- **.NET 9.0 SDK** o superior
-- **Visual Studio 2024** o **VS Code** con extensión C#
-- **MySQL 8.4** (local o Docker)
-- **Git** para control de versiones
-- **Docker** (opcional, para desarrollo en contenedores)
-
-### 🚀 Configuración del Entorno de Desarrollo
-
-#### 1. Clonar y Configurar
-
-```bash
-# Clonar el repositorio
-git clone <repository-url>
-cd accessibility-ms-users
-
-# Restaurar dependencias
-dotnet restore
-
-# Verificar que todo compila
-dotnet build
-```
-
-#### 2. Configuración de Base de Datos Local
-
-**Opción A: MySQL Local**
-
-```bash
-# Crear base de datos local
-mysql -u root -p
-CREATE DATABASE usersdb;
-CREATE USER 'msuser'@'localhost' IDENTIFIED BY 'UsrApp2025SecurePass';
-GRANT ALL PRIVILEGES ON usersdb.* TO 'msuser'@'localhost';
-FLUSH PRIVILEGES;
-```
-
-**Opción B: Docker MySQL**
-
-```bash
-# Usar solo MySQL en Docker
-docker run --name mysql-users -e MYSQL_ROOT_PASSWORD=rootpass -e MYSQL_DATABASE=usersdb -e MYSQL_USER=msuser -e MYSQL_PASSWORD=UsrApp2025SecurePass -p 3307:3306 -d mysql:8.4
-```
+# Localization
+DefaultLanguage=es
+SupportedLanguages=es,en,pt
 
-#### 3. Configurar appsettings.Development.json
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Port=3307;Database=usersdb;Uid=msuser;Pwd=UsrApp2025SecurePass;"
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Debug",
-      "Microsoft.AspNetCore": "Information",
-      "Microsoft.EntityFrameworkCore": "Information"
-    }
-  }
-}
-```
-
-#### 4. Ejecutar Migraciones
-
-```bash
-# Aplicar migraciones de base de datos
-dotnet ef database update --project src/Users.Infrastructure --startup-project src/Users.Api
-
-# O crear migraciones nuevas (si es necesario)
-dotnet ef migrations add InitialCreate --project src/Users.Infrastructure --startup-project src/Users.Api
-```
-
-#### 5. Ejecutar la Aplicación
-
-```bash
-# Ejecutar en modo desarrollo
-cd src/Users.Api
-dotnet run
-
-# La API estará disponible en:
-# - HTTP: http://localhost:5000
-# - HTTPS: https://localhost:5001
-# - Swagger: http://localhost:5000/swagger
-```
-
-### 🔧 Herramientas de Desarrollo
-
-#### Visual Studio Code - Extensiones Recomendadas
-
-```json
-{
-  "recommendations": [
-    "ms-dotnettools.csharp",
-    "ms-dotnettools.vscode-dotnet-runtime",
-    "ms-vscode.vscode-json",
-    "bradlc.vscode-tailwindcss",
-    "ms-vscode.vscode-typescript-next"
-  ]
-}
-```
-
-#### Configuración de Launch (VS Code)
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Users API",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/Users.Api/bin/Debug/net9.0/Users.Api.dll",
-      "args": [],
-      "cwd": "${workspaceFolder}/src/Users.Api",
-      "console": "integratedTerminal",
-      "stopAtEntry": false,
-      "env": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
-    }
-  ]
-}
-```
-
-### 🧪 Testing en Desarrollo
-
-```bash
-# Ejecutar pruebas específicas
-dotnet test --filter "TestMethodName=CreateUserWithPreferences_ShouldReturnCreatedUser"
-
-# Ejecutar pruebas con watch mode
-dotnet test --watch
-
-# Ejecutar con cobertura detallada
-dotnet test --collect:"XPlat Code Coverage" --settings coverlet.runsettings
-reportgenerator -reports:"TestResults/*/coverage.cobertura.xml" -targetdir:"coverage" -reporttypes:"Html"
-```
-
-### 📊 Debugging y Profiling
-
-#### Logging Avanzado en Desarrollo
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Debug",
-      "Microsoft.AspNetCore": "Information",
-      "Microsoft.EntityFrameworkCore.Database.Command": "Information",
-      "Users.Api.Controllers": "Debug",
-      "Users.Application.Services": "Debug"
-    }
-  }
-}
-```
-
-#### Entity Framework Logging
-
-```csharp
-// En Program.cs para debug de EF
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddDbContext<UsersDbContext>(options =>
-    {
-        options.UseMySql(connectionString, serverVersion)
-               .LogTo(Console.WriteLine, LogLevel.Information)
-               .EnableSensitiveDataLogging()
-               .EnableDetailedErrors();
-    });
-}
-```
-
-### 🔄 Workflow de Desarrollo
-
-#### Git Flow Recomendado
-
-```bash
-# 1. Crear rama de feature
-git checkout -b feature/nueva-funcionalidad
-
-# 2. Desarrollar y commitear
-git add .
-git commit -m "feat: agregar nueva funcionalidad de preferencias"
-
-# 3. Ejecutar tests antes de push
-dotnet test
-
-# 4. Push y crear PR
-git push origin feature/nueva-funcionalidad
-```
-
-#### Comandos de Desarrollo Frecuentes
-
-```bash
-# Limpiar y reconstruir
-dotnet clean && dotnet build
-
-# Actualizar Entity Framework tools
-dotnet tool update --global dotnet-ef
-
-# Verificar migraciones pendientes
-dotnet ef migrations list --project src/Users.Infrastructure --startup-project src/Users.Api
-
-# Reset de base de datos local (desarrollo)
-dotnet ef database drop --project src/Users.Infrastructure --startup-project src/Users.Api --force
-dotnet ef database update --project src/Users.Infrastructure --startup-project src/Users.Api
-```
-
-## 🔍 Solución de Problemas
-
-### ❓ Problemas Comunes y Soluciones
-
-#### 🚫 Error: "Connection refused" a MySQL
-
-```bash
-# Verificar que MySQL está corriendo
-docker ps  # Si usas Docker
-# o
-systemctl status mysql  # Linux
-# o
-brew services list | grep mysql  # macOS
-
-# Verificar puerto y credenciales
-telnet localhost 3307
-mysql -h localhost -P 3307 -u msuser -p
-```
-
-**Solución:**
-
-1. Verificar que MySQL está corriendo en el puerto correcto
-2. Validar credenciales en `appsettings.Development.json`
-3. Revisar firewall y permisos de red
-
-#### 🚫 Error: "Unable to create migrations"
-
-```bash
-# Error común
-Build failed. Use dotnet build to see the errors.
-
-# Verificar compilación primero
-dotnet build src/Users.Infrastructure
-dotnet build src/Users.Api
-```
-
-**Solución:**
-
-1. Asegurar que el proyecto compila correctamente
-2. Verificar que `Users.Infrastructure` tiene referencia a `Microsoft.EntityFrameworkCore.Tools`
-3. Ejecutar desde la raíz del proyecto
-
-#### 🚫 Error: "JWT Secret Key too short"
-
-```json
-{
-  "error": "IDX10720: Unable to create KeyedHashAlgorithm for algorithm 'HS256', key: '[PII is hidden]' is too short"
-}
-```
-
-**Solución:**
-
-```json
-{
-  "JwtSettings": {
-    "SecretKey": "una-clave-secreta-de-al-menos-32-caracteres-para-jwt-hs256-security"
-  }
-}
-```
-
-#### 🚫 Error: "Tests failing with InMemory database"
-
-```bash
-# Error en tests
-System.InvalidOperationException: No database provider has been configured
-```
-
-**Solución:**
-
-```csharp
-// En TestWebApplicationFactory
-services.RemoveAll<DbContextOptions<UsersDbContext>>();
-services.AddDbContext<UsersDbContext>(options =>
-{
-    options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}");
-});
-```
-
-### 🔧 Configuración de Troubleshooting
-
-#### Habilitar Logging Detallado
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Trace",
-      "Microsoft.EntityFrameworkCore.Database.Command": "Information",
-      "Microsoft.EntityFrameworkCore.Infrastructure": "Information"
-    }
-  }
-}
-```
-
-#### Verificar Health Checks
-
-```bash
-# Verificar estado de la API
-curl http://localhost:5000/health
-
-# Respuesta esperada
-{
-  "status": "Healthy",
-  "timestamp": "2025-09-16T12:30:00Z",
-  "duration": "00:00:00.1234567"
-}
-```
-
-#### Validar Conectividad de Base de Datos
-
-```bash
-# Test de conexión manual
-mysql -h localhost -P 3307 -u msuser -p usersdb
-
-# Ejecutar query de prueba
-SELECT VERSION();
-SHOW TABLES;
+# Logging
+Serilog__MinimumLevel=Information
+Serilog__WriteTo__Console=true
 ```
-
-### 📞 Obtener Ayuda
-
-- **Documentación**: Consultar `/swagger` cuando la API esté corriendo
-- **Logs**: Revisar logs de aplicación y MySQL
-- **Issues**: Revisar issues conocidos en el repositorio
-- **Testing**: Ejecutar suite de pruebas para validar funcionalidad
-
-## 🎯 Resumen del Proyecto
-
-**accessibility-ms-users** es un microservicio de gestión de usuarios y preferencias de accesibilidad desarrollado con **.NET 9.0**, **Entity Framework Core** y **MySQL 8.4**. Implementa **Clean Architecture** y forma parte integral del ecosistema de accesibilidad digital.
 
-### ✨ Características Destacadas
+### Configuración de Base de Datos
 
-- 🏗️ **Clean Architecture** con separación clara de responsabilidades
-- 🌐 **API RESTful moderna** con rutas simplificadas (`/api/` sin versionado)
-- 🔐 **Autenticación JWT** con gestión completa de sesiones
-- ⚙️ **Preferencias de accesibilidad** personalizables por usuario
-- 🌍 **Internacionalización completa** (español/inglés automático)
-- 📦 **DTOs consistentes** sin ciclos de entidades
-- ✅ **Suite de pruebas completa** (6/6 tests passing)
-- 🐳 **Docker ready** para despliegue inmediato
-- 📚 **Documentación Swagger** integrada
+```sql
+-- Crear base de datos
+CREATE DATABASE users_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-### 🚀 Estado del Proyecto
-
-| Aspecto           | Estado             | Descripción                              |
-| ----------------- | ------------------ | ---------------------------------------- |
-| **Compilación**   | 🟢 **Exitosa**     | Build sin errores ni warnings            |
-| **Testing**       | 🟢 **6/6 Passing** | Suite completa de pruebas de integración |
-| **Cobertura**     | 🟢 **>80%**        | Cobertura de código satisfactoria        |
-| **Docker**        | 🟢 **Ready**       | Imagen optimizada multi-stage            |
-| **CI/CD**         | 🟢 **Configured**  | Pipeline completo con validaciones       |
-| **Documentación** | 🟢 **Complete**    | README completo + Swagger API            |
-| **Seguridad**     | 🟢 **Implemented** | JWT, BCrypt, validaciones robustas       |
-
-### 🏗️ Stack Tecnológico
-
-- **Backend**: .NET 9.0 with ASP.NET Core
-- **Database**: MySQL 8.4 with Entity Framework Core
-- **Authentication**: JWT with BCrypt password hashing
-- **Testing**: xUnit with Integration Tests
-- **Documentation**: OpenAPI/Swagger
-- **Validation**: FluentValidation
-- **Containerization**: Docker with Docker Compose
-- **i18n**: Automatic language detection (es/en)
-
-### 📊 Métricas de Calidad
-
-```
-✅ Compilación exitosa en Release
-✅ 6/6 pruebas de integración passing
-✅ Cobertura de código > 80%
-✅ Docker build exitoso
-✅ Documentación API completa
-✅ Zero security warnings
-✅ Clean Architecture implementada
-✅ i18n completamente funcional
+-- Ejecutar script de inicialización
+SOURCE init-users-db.sql;
 ```
 
-## 🌟 Integración con el Ecosistema
+## 🛠️ Stack Tecnológico
 
-### 🔗 Conectividad
+- **Runtime:** .NET 9.0
+- **Framework:** ASP.NET Core Web API
+- **ORM:** Entity Framework Core 9.0
+- **Database:** MySQL 8.0+
+- **Authentication:** JWT Bearer
+- **Logging:** Serilog
+- **Testing:** xUnit + Moq + FluentAssertions
+- **Coverage:** Coverlet + ReportGenerator
+- **Container:** Docker + Docker Compose
 
-| Servicio        | Puerto | Propósito                          | Estado        |
-| --------------- | ------ | ---------------------------------- | ------------- |
-| **Users API**   | `8081` | Gestión de usuarios y preferencias | 🟢 Activo     |
-| **MySQL DB**    | `3307` | Base de datos principal            | 🟢 Activo     |
-| **Gateway**     | `8100` | Proxy reverso y enrutamiento       | 🔗 Integrable |
-| **Analysis MS** | `8082` | Análisis de accesibilidad          | 🔗 Integrable |
-| **Reports MS**  | `8083` | Generación de reportes             | 🔗 Integrable |
+## 📜 License
 
-### 🎯 Casos de Uso Principales
+**Proprietary Software License v1.0**
 
-1. **🔐 Autenticación y Autorización**
+Copyright (c) 2025 Geovanny Camacho. All rights reserved.
 
-   - Registro de nuevos usuarios con validación
-   - Login con JWT y datos completos del usuario
-   - Gestión de sesiones múltiples por usuario
+**IMPORTANT:** This software and associated documentation files (the "Software") are the exclusive property of Geovanny Camacho and are protected by copyright laws and international treaty provisions.
 
-2. **⚙️ Gestión de Preferencias**
+### TERMS AND CONDITIONS
 
-   - Configuración WCAG personalizada por usuario
-   - Preferencias de interfaz (tema, idioma, fuente)
-   - Configuración de reportes y notificaciones
+1. **OWNERSHIP**: The Software is licensed, not sold. Geovanny Camacho retains all right, title, and interest in and to the Software, including all intellectual property rights.
 
-3. **👥 Administración de Usuarios**
+2. **RESTRICTIONS**: You may NOT:
 
-   - CRUD completo de usuarios
-   - Eliminación cascada de datos asociados
-   - Búsqueda y filtrado por diferentes criterios
+   - Copy, modify, or create derivative works of the Software
+   - Distribute, transfer, sublicense, lease, lend, or rent the Software
+   - Reverse engineer, decompile, or disassemble the Software
+   - Remove or alter any proprietary notices or labels on the Software
+   - Use the Software for any commercial purpose without explicit written permission
+   - Share access credentials or allow unauthorized access to the Software
 
-4. **🧪 Desarrollo y Testing**
-   - Endpoint de limpieza total para testing
-   - Base de datos de pruebas aislada
-   - Reseteo automático entre tests
+3. **CONFIDENTIALITY**: The Software contains trade secrets and confidential information. You agree to maintain the confidentiality of the Software and not disclose it to any third party.
 
-## 🚀 Próximos Pasos
+4. **TERMINATION**: This license is effective until terminated. Your rights under this license will terminate automatically without notice if you fail to comply with any of its terms.
 
-### 🔮 Roadmap de Funcionalidades
+5. **NO WARRANTY**: THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
-- [ ] **🔔 Sistema de Notificaciones** - Push notifications para eventos importantes
-- [ ] **🔐 OAuth2 Integration** - Autenticación con proveedores externos
-- [ ] **📊 Dashboard de Usuarios** - Panel administrativo para gestión
-- [ ] **🌐 Multi-tenancy** - Soporte para múltiples organizaciones
-- [ ] **📱 Mobile SDK** - SDK para aplicaciones móviles
-- [ ] **🤖 AI Preferences** - Preferencias adaptativas con ML
+6. **LIMITATION OF LIABILITY**: IN NO EVENT SHALL GEOVANNY CAMACHO BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-### 🔧 Mejoras Técnicas
+7. **GOVERNING LAW**: This license shall be governed by and construed in accordance with the laws of the jurisdiction in which Geovanny Camacho resides, without regard to its conflict of law provisions.
 
-- [ ] **⚡ Redis Caching** - Cache distribuido para sesiones
-- [ ] **📈 Application Insights** - Telemetría y monitoreo avanzado
-- [ ] **🔒 Rate Limiting** - Protección contra abuso de API
-- [ ] **📝 Audit Logging** - Log completo de operaciones críticas
-- [ ] **🌍 More Languages** - Soporte para más idiomas (fr, de, pt)
+8. **ENTIRE AGREEMENT**: This license constitutes the entire agreement between you and Geovanny Camacho regarding the Software and supersedes all prior or contemporaneous understandings.
 
-### 🏢 Preparación para Producción
+**FOR LICENSING INQUIRIES:**  
+Geovanny Camacho  
+Email: fgiocl@outlook.com
 
-- [ ] **🛡️ Security Hardening** - Revisión completa de seguridad
-- [ ] **📊 Performance Testing** - Tests de carga y stress
-- [ ] **🔄 Backup Strategy** - Estrategia de respaldos automatizados
-- [ ] **📈 Monitoring Setup** - Configuración de alertas y métricas
-- [ ] **📋 Documentation** - Documentación técnica para DevOps
+**By using this Software, you acknowledge that you have read this license, understand it, and agree to be bound by its terms and conditions.**
 
 ---
 
-## 📞 Soporte y Contribución
-
-### 🤝 ¿Cómo Contribuir?
-
-1. **🍴 Fork** el repositorio
-2. **🌿 Crear rama** para nueva funcionalidad
-3. **✅ Ejecutar tests** antes de commit
-4. **📝 Documentar** cambios y nuevas funcionalidades
-5. **🔄 Submit PR** con descripción detallada
-
-### 📬 Contacto y Recursos
-
-- **📚 Documentación API**: `/swagger` (cuando esté corriendo)
-- **🐛 Reportar Issues**: GitHub Issues
-- **💬 Discusiones**: GitHub Discussions
-- **📋 Wiki**: Documentación técnica extendida
-
----
-
-## 📄 Licencia y Reconocimientos
-
-_Microservicio desarrollado como parte del **ecosistema de accesibilidad digital** con .NET 9, Entity Framework Core y MySQL. Diseñado siguiendo las mejores prácticas de Clean Architecture, testing automatizado y DevOps._
-
-**Tecnologías Principales:**
-
-- **.NET 9.0** - Framework principal
-- **Entity Framework Core** - ORM y migraciones
-- **MySQL 8.4** - Base de datos relacional
-- **Docker** - Contenedorización
-- **xUnit** - Framework de testing
-- **FluentValidation** - Validación de modelos
-- **BCrypt** - Hash seguro de contraseñas
-- **JWT** - Autenticación stateless
-
----
-
-> 🎉 **¡Listo para producción!** - Microservicio completamente funcional con documentación completa, tests passing y Docker ready para despliegue inmediato.
+**Author:** Geovanny Camacho (fgiocl@outlook.com)  
+**Last Update:** 06/10/2025
