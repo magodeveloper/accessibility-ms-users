@@ -1,0 +1,84 @@
+# =============================================================================
+# .dockerignore para Microservicio Users
+# =============================================================================
+# Excluye archivos innecesarios del contexto de build de Docker
+# Esto mejora la velocidad de build y reduce el tamaño del contexto
+
+# --- Directorios de compilación ---
+**/bin/
+**/obj/
+**/out/
+
+# --- Directorios de resultados de tests ---
+**/TestResults/
+**/coverage/
+**/*.trx
+**/*.coverage
+**/*.coveragexml
+
+# --- Control de versiones ---
+**/.git/
+**/.gitignore
+**/.gitattributes
+
+# --- IDEs y editores ---
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.suo
+**/*.user
+**/*.userosscache
+**/*.sln.docstates
+
+# --- Archivos de documentación (excepto README.md en root) ---
+**/*.md
+!README.md
+
+# --- Archivos de configuración local ---
+**/.env
+**/.env.development
+**/.env.production
+**/.env.local
+!.env.example
+
+# --- Scripts de desarrollo ---
+**/manage-tests.ps1
+**/init-test-databases.ps1
+**/init-test-databases.sh
+
+# --- Archivos temporales ---
+**/[Tt]emp/
+**/*.tmp
+**/*.log
+**/*.swp
+**/*.swo
+**/*~
+
+# --- Archivos de sistema ---
+**/.DS_Store
+**/Thumbs.db
+**/desktop.ini
+
+# --- Archivos de NuGet ---
+**/*.nupkg
+**/.nuget/packages/
+
+# --- Archivos de CI/CD (si no se necesitan en runtime) ---
+**/.github/
+**/.gitlab-ci.yml
+**/.travis.yml
+
+# --- Archivos de cobertura ---
+**/coverlet.runsettings
+**/test-dashboard.html
+
+# --- Docker files (no necesarios dentro del build) ---
+**/Dockerfile*
+**/docker-compose*
+**/.dockerignore
+
+# --- Secretos y certificados ---
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.pem
