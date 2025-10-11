@@ -50,6 +50,6 @@ jobs:
       - name: Report coverage
         uses: codecov/codecov-action@v4
         with:
-          files: ./Users.Tests/TestResults/**/*.cobertura.xml
+          files: ./src/Users.Tests/TestResults/**/*.cobertura.xml
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
