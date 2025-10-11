@@ -1,12 +1,15 @@
 # CI para .NET 9 + Docker + cobertura de código
 name: CI
 
-# Ejecuta el workflow en cada push o pull request a la rama master
+# Ejecuta el workflow en push/PR a master y main, más schedule semanal
 on:
   push:
-    branches: [master]
+    branches: [master, main]
   pull_request:
-    branches: [master]
+    branches: [master, main]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
 
 jobs:
   build-test:
@@ -33,6 +36,10 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            **/packages.lock.json
       - name: Restore dependencies
         run: dotnet restore Users.sln
       - name: Build
@@ -53,3 +60,46 @@ jobs:
           files: ./src/Users.Tests/TestResults/**/*.cobertura.xml
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  docker-build-test:
+    name: "🐳 Docker Build & Smoke Test"
+    runs-on: ubuntu-latest
+    needs: build-test
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: |
+          IMAGE=ms-users-ci:${{ github.sha }}
+          docker build -t $IMAGE .
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+      - name: Run container
+        run: |
+          docker run -d --rm --name ms-users-smoke \
+            -p 8081:8081 \
+            -e ASPNETCORE_ENVIRONMENT=Production \
+            "$IMAGE"
+      - name: Wait for health
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8081/health >/dev/null; then
+              echo "Health is OK"; exit 0; fi;
+            echo "Waiting for service... ($i/30)"; sleep 2;
+          done
+          echo "Service didn't become healthy in time"; docker logs ms-users-smoke || true; exit 1
+      - name: Stop container
+        if: always()
+        run: docker stop ms-users-smoke || true
+
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [build-test, docker-build-test]
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Build & Tests: ${{ needs.build-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker Smoke: ${{ needs.docker-build-test.result }}" >> $GITHUB_STEP_SUMMARY
