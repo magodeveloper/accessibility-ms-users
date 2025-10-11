@@ -22,7 +22,7 @@ jobs:
         ports:
           - 3307:3306 # Expone el puerto 3306 del contenedor en el 3307 del host
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -pdevpass" --health-interval=10s --health-timeout=5s --health-retries=10
+          --health-cmd="mysqladmin ping -h localhost -prootpass" --health-interval=10s --health-timeout=5s --health-retries=10
     env:
       ConnectionStrings__Default: server=127.0.0.1;port=3307;database=usersdb;user=devuser;password=devpass;TreatTinyAsBoolean=false
       ASPNETCORE_ENVIRONMENT: Development
@@ -40,7 +40,7 @@ jobs:
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 -P3307 -pdevpass --silent; then exit 0; fi
+            if mysqladmin ping -h 127.0.0.1 -P3307 -uroot -prootpass --silent; then exit 0; fi
             sleep 2
           done
           exit 1
