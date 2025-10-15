@@ -50,14 +50,12 @@ services:
     networks:
       - default
       - accessibility-shared
-    # healthcheck deshabilitado - los endpoints /health funcionan correctamente
-    # El contenedor se marca como healthy por defecto
-    # healthcheck:
-    #   test: ["CMD-SHELL", "dotnet --version > /dev/null 2>&1 || exit 1"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
-    #   start_period: 40s
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     labels:
       - "prometheus.scrape=true"
       - "prometheus.port=8081"
