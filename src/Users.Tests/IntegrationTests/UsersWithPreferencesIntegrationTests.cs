@@ -177,10 +177,15 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
             Email: email,
             Password: "Password123!"
         );
-        await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        var createResponse = await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created, "User creation should succeed");
+
+        var createContent = await createResponse.Content.ReadAsStringAsync();
+        var createResult = JsonSerializer.Deserialize<JsonElement>(createContent);
+        var userId = createResult.GetProperty("user").GetProperty("id").GetInt32();
 
         // Actualizar con cliente autenticado
-        var clientAuth = _factory.CreateAuthenticatedClient(email: email);
+        var clientAuth = _factory.CreateAuthenticatedClient(userId: userId, email: email);
         var patchDto = new PreferenceUserPatchDto(
             WcagVersion: null, WcagLevel: null, Language: null, VisualTheme: null,
             ReportFormat: null, NotificationsEnabled: null, AiResponseLevel: null, FontSize: null,
@@ -216,10 +221,15 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
             Email: email,
             Password: "Password123!"
         );
-        await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        var createResponse = await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created, "User creation should succeed");
+
+        var createContent = await createResponse.Content.ReadAsStringAsync();
+        var createResult = JsonSerializer.Deserialize<JsonElement>(createContent);
+        var userId = createResult.GetProperty("user").GetProperty("id").GetInt32();
 
         // Actualizar preferencias con cliente autenticado
-        var clientAuth = _factory.CreateAuthenticatedClient(email: email);
+        var clientAuth = _factory.CreateAuthenticatedClient(userId: userId, email: email);
         var patchDto = new PreferenceUserPatchDto(
             WcagVersion: "2.1", WcagLevel: "AAA", Language: "en", VisualTheme: "dark",
             ReportFormat: "html", NotificationsEnabled: false, AiResponseLevel: "detailed", FontSize: 18,
@@ -261,10 +271,15 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
             Email: email,
             Password: "Password123!"
         );
-        await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        var createResponse = await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created, "User creation should succeed");
+
+        var createContent = await createResponse.Content.ReadAsStringAsync();
+        var createResult = JsonSerializer.Deserialize<JsonElement>(createContent);
+        var userId = createResult.GetProperty("user").GetProperty("id").GetInt32();
 
         // Actualizar solo el nombre
-        var clientAuth = _factory.CreateAuthenticatedClient(email: email);
+        var clientAuth = _factory.CreateAuthenticatedClient(userId: userId, email: email);
         var patchDto = new PreferenceUserPatchDto(
             WcagVersion: null, WcagLevel: null, Language: null, VisualTheme: null,
             ReportFormat: null, NotificationsEnabled: null, AiResponseLevel: null, FontSize: null,
@@ -300,10 +315,15 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
             Email: email,
             Password: "Password123!"
         );
-        await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        var createResponse = await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created, "User creation should succeed");
+
+        var createContent = await createResponse.Content.ReadAsStringAsync();
+        var createResult = JsonSerializer.Deserialize<JsonElement>(createContent);
+        var userId = createResult.GetProperty("user").GetProperty("id").GetInt32();
 
         // Intentar actualizar con versión WCAG inválida
-        var clientAuth = _factory.CreateAuthenticatedClient(email: email);
+        var clientAuth = _factory.CreateAuthenticatedClient(userId: userId, email: email);
         var patchDto = new PreferenceUserPatchDto(
             WcagVersion: "3.0", // Versión no soportada
             WcagLevel: null, Language: null, VisualTheme: null,
@@ -340,10 +360,15 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
             Email: email,
             Password: "OldPassword123!"
         );
-        await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        var createResponse = await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created, "User creation should succeed");
 
-        // Actualizar contraseña
-        var clientAuth = _factory.CreateAuthenticatedClient(email: email);
+        var createContent = await createResponse.Content.ReadAsStringAsync();
+        var createResult = JsonSerializer.Deserialize<JsonElement>(createContent);
+        var userId = createResult.GetProperty("user").GetProperty("id").GetInt32();
+
+        // Actualizar contraseña con el userId correcto
+        var clientAuth = _factory.CreateAuthenticatedClient(userId: userId, email: email);
         var patchDto = new PreferenceUserPatchDto(
             WcagVersion: null, WcagLevel: null, Language: null, VisualTheme: null,
             ReportFormat: null, NotificationsEnabled: null, AiResponseLevel: null, FontSize: null,
@@ -378,10 +403,15 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
             Email: email,
             Password: "Password123!"
         );
-        await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        var createResponse = await clientNoAuth.PostAsJsonAsync("/api/users-with-preferences", createDto);
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created, "User creation should succeed");
+
+        var createContent = await createResponse.Content.ReadAsStringAsync();
+        var createResult = JsonSerializer.Deserialize<JsonElement>(createContent);
+        var userId = createResult.GetProperty("user").GetProperty("id").GetInt32();
 
         // Actualizar TODOS los campos
-        var clientAuth = _factory.CreateAuthenticatedClient(email: email);
+        var clientAuth = _factory.CreateAuthenticatedClient(userId: userId, email: email);
         var newNickname = $"u{Guid.NewGuid().ToString().Substring(0, 6)}";
         var patchDto = new PreferenceUserPatchDto(
             WcagVersion: "2.0", WcagLevel: "A", Language: "en", VisualTheme: "dark",
