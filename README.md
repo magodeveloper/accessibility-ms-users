@@ -67,6 +67,15 @@ Microservicio empresarial para:
 - Memory usage tracking
 - Endpoints de salud personalizados
 
+### 📊 Observabilidad & Métricas
+
+- **Prometheus Metrics** integrado
+- Métricas de negocio personalizadas (usuarios, logins, sesiones)
+- Endpoint `/metrics` expuesto
+- Monitoreo de autenticación y operaciones
+- Histogramas de duración de operaciones
+- Gauges de sesiones activas y usuarios totales
+
 ### ⏰ Gestión de Zona Horaria
 
 - **DateTimeProvider Service** para manejo consistente de fechas
@@ -236,7 +245,13 @@ curl -X POST http://localhost:8081/api/users \
 | GET    | `/health/ready` | Readiness probe      |
 | GET    | `/health/live`  | Liveness probe       |
 
-**Total: 25 endpoints disponibles**
+### 📊 Metrics (/metrics)
+
+| Método | Endpoint   | Descripción         |
+| ------ | ---------- | ------------------- |
+| GET    | `/metrics` | Métricas Prometheus |
+
+**Total: 26 endpoints disponibles**
 
 ## 🧪 Testing
 
@@ -303,7 +318,479 @@ Start-Process .\test-dashboard.html
 - Gestión de sesiones activas
 - Recuperación de contraseña
 
-## 🐳 Deployment
+## � Observabilidad & Métricas
+
+### Prometheus Metrics
+
+El microservicio expone métricas detalladas en el endpoint `/metrics` para monitoreo con Prometheus/Grafana.
+
+#### 📈 Métricas de Negocio
+
+**Contadores (Counters):**
+
+```
+# Total de usuarios registrados
+users_registered_total
+
+# Total de logins exitosos/fallidos
+auth_login_total{status="success|failure"}
+
+# Total de sesiones creadas
+sessions_created_total
+
+# Total de preferencias actualizadas
+preferences_updated_total
+
+# Total de password resets solicitados
+password_resets_requested_total
+```
+
+**Histogramas (Histograms):**
+
+```
+# Duración de operaciones de autenticación
+auth_operation_duration_seconds{operation="login|logout|reset"}
+
+# Duración de consultas de usuarios
+user_query_duration_seconds{operation="get_all|get_by_email|create"}
+
+# Duración de operaciones de sesión
+session_operation_duration_seconds{operation="create|close|get_active"}
+```
+
+**Gauges:**
+
+```
+# Sesiones activas actualmente
+active_sessions_count
+
+# Usuarios registrados totales
+total_users_count
+```
+
+#### 🔍 Consultar Métricas
+
+```bash
+# Ver todas las métricas
+curl http://localhost:8081/metrics
+
+# Filtrar métricas de autenticación
+curl http://localhost:8081/metrics | grep "auth_login_total"
+
+# Verificar sesiones activas
+curl http://localhost:8081/metrics | grep "active_sessions_count"
+```
+
+#### 📊 Dashboard Grafana (Ejemplo)
+
+```yaml
+# Panel 1: Tasa de registro de usuarios
+rate(users_registered_total[5m])
+
+# Panel 2: Tasa de login exitoso vs fallido
+sum(rate(auth_login_total[5m])) by (status)
+
+# Panel 3: Duración promedio de login
+histogram_quantile(0.95, rate(auth_operation_duration_seconds_bucket{operation="login"}[5m]))
+
+# Panel 4: Sesiones activas en tiempo real
+active_sessions_count
+```
+
+### Health Checks
+
+```bash
+# Health check básico
+curl http://localhost:8081/health
+
+# Readiness (listo para recibir tráfico)
+curl http://localhost:8081/health/ready
+
+# Liveness (proceso está vivo)
+curl http://localhost:8081/health/live
+```
+
+**Respuesta Health Check:**
+
+```json
+{
+  "status": "Healthy",
+  "totalDuration": "00:00:00.0234567",
+  "entries": {
+    "database": {
+      "status": "Healthy",
+      "description": "Database connection is healthy",
+      "duration": "00:00:00.0123456"
+    },
+    "memory": {
+      "status": "Healthy",
+      "description": "Memory usage is within limits",
+      "data": {
+        "allocatedMB": 128,
+        "thresholdMB": 512
+      },
+      "duration": "00:00:00.0001234"
+    },
+    "application": {
+      "status": "Healthy",
+      "description": "Users API is running",
+      "duration": "00:00:00.0001000"
+    }
+  }
+}
+```
+
+## 🔐 Arquitectura de Seguridad
+
+### Flujo de Autenticación
+
+```
+┌──────────┐    JWT    ┌─────────┐   X-User-*   ┌──────────┐   IUserContext   ┌────────────┐
+│  Client  │ ───────>  │ Gateway │ ──────────>  │ Middleware│ ──────────────> │ Controller │
+└──────────┘           └─────────┘              └──────────┘                 └────────────┘
+                           │                          │                            │
+                       Valida JWT              Extrae headers              Valida IsAuthenticated
+                       + Secret               + Crea UserContext           + Usa UserId/Role
+```
+
+### Middleware Stack
+
+**1. GatewaySecretValidationMiddleware**
+
+```csharp
+// Valida que la petición provenga del Gateway autorizado
+// Header requerido: X-Gateway-Secret
+// Configuración: appsettings.json -> Gateway:Secret
+```
+
+**2. UserContextMiddleware**
+
+```csharp
+// Extrae información de usuario de headers propagados por Gateway
+// Headers procesados:
+//   - X-User-Id          → UserId
+//   - X-User-Email       → Email
+//   - X-User-Role        → Role
+//   - X-User-Name        → Name
+
+// Inyecta IUserContext en controllers vía DI
+```
+
+### IUserContext Interface
+
+```csharp
+public interface IUserContext
+{
+    bool IsAuthenticated { get; }
+    int UserId { get; }
+    string Email { get; }
+    string Role { get; }
+    string Name { get; }
+}
+```
+
+### Uso en Controllers
+
+```csharp
+public class UserController(
+    IUserService service,
+    IUserContext userContext) : ControllerBase
+{
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        // ✅ Validación de autenticación
+        if (!userContext.IsAuthenticated)
+            return Unauthorized(new { message = "User not authenticated" });
+
+        // ✅ Verificar permisos de admin
+        if (userContext.Role != "Admin")
+            return Forbid();
+
+        var users = await service.GetAllAsync();
+        return Ok(users);
+    }
+}
+```
+
+### JWT Configuration
+
+**appsettings.json:**
+
+```json
+{
+  "Gateway": {
+    "Secret": "VGhpc0lzQVNlY3JldEtleUZvckdhdGV3YXkyMDI0"
+  },
+  "JwtSettings": {
+    "SecretKey": "your-jwt-secret-key-min-32-chars",
+    "Issuer": "https://accessibility.company.com",
+    "Audience": "https://accessibility.company.com",
+    "ExpiryHours": 24
+  }
+}
+```
+
+**Generar Secrets:**
+
+```powershell
+# Generar JWT Secret Key
+.\Generate-JwtSecretKey.ps1
+
+# Validar configuración JWT
+.\Validate-JwtConfig.ps1
+```
+
+### Flujo de Autenticación Completo
+
+**1. Login (POST /api/auth/login)**
+
+```
+Client → Gateway → Users API
+  1. Valida email/password contra DB
+  2. Genera JWT token con claims (UserId, Email, Role)
+  3. Crea sesión activa en DB
+  4. Retorna token + datos de usuario
+```
+
+**2. Operaciones Protegidas**
+
+```
+Client (con JWT) → Gateway → Users API
+  1. Gateway valida JWT y extrae claims
+  2. Gateway agrega headers X-User-*
+  3. UserContextMiddleware crea IUserContext
+  4. Controller valida IsAuthenticated y permisos
+  5. Ejecuta lógica de negocio
+```
+
+**3. Logout (POST /api/auth/logout)**
+
+```
+Client → Gateway → Users API
+  1. Invalida token en sistema
+  2. Cierra sesión activa en DB
+  3. Retorna confirmación
+```
+
+## 🛠️ Scripts & Utilidades
+
+### PowerShell Scripts
+
+**1. Generate-JwtSecretKey.ps1**
+
+Genera una clave secreta segura para JWT de forma automática.
+
+```powershell
+# Ejecutar script
+.\Generate-JwtSecretKey.ps1
+
+# Salida:
+# ✅ JWT Secret Key generada exitosamente
+# 🔑 Clave: AbCdEf12...GhIjKl34 (32+ caracteres)
+# 📝 Agregar en appsettings.json -> JwtSettings:SecretKey
+```
+
+**Características:**
+
+- Genera claves de 32+ caracteres automáticamente
+- Usa RNGCryptoServiceProvider (cryptographically secure)
+- Valida longitud mínima requerida
+- Formato Base64 URL-safe
+
+**2. Validate-JwtConfig.ps1**
+
+Valida la configuración JWT en `appsettings.json` antes de deployment.
+
+```powershell
+# Ejecutar validación
+.\Validate-JwtConfig.ps1
+
+# Salida exitosa:
+# ✅ JwtSettings:SecretKey existe
+# ✅ Longitud: 64 caracteres (>= 32 requeridos)
+# ✅ JwtSettings:Issuer configurado
+# ✅ JwtSettings:Audience configurado
+# ✅ JwtSettings:ExpiryHours configurado: 24
+# ✅ Configuración JWT válida para producción
+
+# Salida con errores:
+# ❌ JwtSettings:SecretKey no encontrada
+# ❌ SecretKey muy corta: 16 caracteres (mínimo 32)
+# ⚠️ Considere ejecutar .\Generate-JwtSecretKey.ps1
+```
+
+**Validaciones:**
+
+- ✅ Existencia de `JwtSettings:SecretKey`
+- ✅ Longitud mínima (32 caracteres)
+- ✅ Configuración de `Issuer` y `Audience`
+- ✅ Valor de `ExpiryHours`
+- ✅ Formato JSON válido
+
+**3. init-test-databases.ps1 / .sh**
+
+Inicializa bases de datos de prueba para testing local.
+
+```powershell
+# Windows
+.\init-test-databases.ps1
+
+# Linux/Mac
+chmod +x init-test-databases.sh
+./init-test-databases.sh
+```
+
+**Funcionalidad:**
+
+- Crea contenedor MySQL para testing
+- Ejecuta script `init-users-db.sql`
+- Configura usuario y permisos
+- Configura timezone de Ecuador (UTC-5)
+- Verifica conexión antes de salir
+
+**Variables de entorno requeridas:**
+
+```env
+MYSQL_TEST_ROOT_PASSWORD=test_root_pass
+MYSQL_TEST_DATABASE=users_test_db
+MYSQL_TEST_USER=test_user
+MYSQL_TEST_PASSWORD=test_pass
+TZ=America/Guayaquil
+```
+
+**4. manage-tests.ps1**
+
+Script unificado para ejecutar tests con diferentes configuraciones.
+
+```powershell
+# Ejecutar todos los tests
+.\manage-tests.ps1
+
+# Tests con cobertura y reporte HTML
+.\manage-tests.ps1 -GenerateCoverage -OpenReport
+
+# Tests por tipo
+.\manage-tests.ps1 -TestType Unit
+.\manage-tests.ps1 -TestType Integration
+
+# Ver solo resumen
+.\manage-tests.ps1 -Summary
+```
+
+**Características:**
+
+- Ejecuta xUnit con configuración personalizada
+- Genera reportes de cobertura (Coverlet)
+- Filtra por tipo (Unit/Integration/E2E)
+- Exporta resultados a `TestResults/`
+- Abre dashboard interactivo HTML
+
+### C# Utilities
+
+**DatabaseManager.cs**
+
+Utilidad para gestión de esquema de base de datos en testing.
+
+```csharp
+public class DatabaseManager
+{
+    // Crear esquema completo desde cero
+    public static async Task CreateSchemaAsync(string connectionString);
+
+    // Limpiar todos los datos (mantiene estructura)
+    public static async Task CleanDatabaseAsync(string connectionString);
+
+    // Resetear base de datos (drop + recreate)
+    public static async Task ResetDatabaseAsync(string connectionString);
+
+    // Verificar conexión
+    public static async Task<bool> CanConnectAsync(string connectionString);
+
+    // Seed data de prueba
+    public static async Task SeedTestDataAsync(string connectionString);
+}
+```
+
+**Uso en tests:**
+
+```csharp
+[Fact]
+public async Task Integration_CreateUser_ShouldSucceed()
+{
+    // Arrange: Limpiar estado previo
+    await DatabaseManager.CleanDatabaseAsync(_connectionString);
+
+    // Act: Ejecutar test
+    var user = await _userService.CreateAsync(dto);
+
+    // Assert
+    Assert.NotNull(user);
+    Assert.Equal(dto.Email, user.Email);
+}
+```
+
+**DateTimeProvider.cs**
+
+Servicio para manejo consistente de fechas en zona horaria de Ecuador.
+
+```csharp
+public interface IDateTimeProvider
+{
+    DateTime Now { get; }
+    DateTime UtcNow { get; }
+}
+
+public class DateTimeProvider : IDateTimeProvider
+{
+    private static readonly TimeZoneInfo EcuadorTimeZone =
+        TimeZoneInfo.FindSystemTimeZoneById("America/Guayaquil");
+
+    public DateTime Now => TimeZoneInfo.ConvertTimeFromUtc(
+        DateTime.UtcNow, EcuadorTimeZone);
+
+    public DateTime UtcNow => DateTime.UtcNow;
+}
+```
+
+**Ventajas:**
+
+- Centralización del manejo de fechas
+- Testeable con mocks
+- Independiente de configuración del servidor
+
+### SQL Scripts
+
+**init-users-db.sql**
+
+Script de inicialización de base de datos con esquema completo.
+
+```sql
+-- Estructura:
+-- 1. Creación de base de datos con UTF-8
+-- 2. Tablas principales (users, preferences, sessions)
+-- 3. Índices para performance
+-- 4. Foreign keys y relaciones
+-- 5. Usuario y permisos
+-- 6. Configuración de timezone
+
+-- Ejecutar manualmente:
+mysql -u root -p < init-users-db.sql
+```
+
+**Tablas creadas:**
+
+- `users` - Usuarios del sistema
+- `preferences` - Preferencias de accesibilidad por usuario
+- `sessions` - Sesiones activas
+
+**Índices creados:**
+
+- `idx_users_email` - Búsqueda rápida por email (UNIQUE)
+- `idx_sessions_user` - Sesiones por usuario
+- `idx_sessions_token` - Validación de tokens
+
+## �🐳 Deployment
 
 ### Docker
 
