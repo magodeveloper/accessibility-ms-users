@@ -7,6 +7,8 @@ services:
       MYSQL_DATABASE: ${DB_NAME:-usersdb}
       MYSQL_USER: ${DB_USER:-msuser}
       MYSQL_PASSWORD: ${DB_PASSWORD:-UsrApp2025SecurePass}
+      TZ: America/Guayaquil # Zona horaria de Ecuador (UTC-5)
+    command: --default-time-zone=-05:00
     ports:
       - "${DB_PORT:-3307}:3306"
     volumes:
@@ -40,7 +42,7 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
-      ConnectionStrings__Default: "server=mysql;port=3306;database=${DB_NAME:-usersdb};user=${DB_USER:-msuser};password=${DB_PASSWORD:-UsrApp2025SecurePass};TreatTinyAsBoolean=false"
+      ConnectionStrings__Default: "server=mysql;port=3306;database=${DB_NAME:-usersdb};user=${DB_USER:-msuser};password=${DB_PASSWORD:-UsrApp2025SecurePass};TreatTinyAsBoolean=false;ConvertZeroDateTime=True;DateTimeKind=Local"
       JwtSettings__SecretKey: ${JwtSettings__SecretKey:-9b3e7ER@S^glvxPWKX8nN?DTqtrd%Yj!oVIfh+BG&piHwZz6ky4Q52MumOFA-Lc0}
       JwtSettings__Issuer: ${JwtSettings__Issuer:-https://accessibility.company.com}
       JwtSettings__Audience: ${JwtSettings__Audience:-https://accessibility.company.com}

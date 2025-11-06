@@ -67,6 +67,14 @@ Microservicio empresarial para:
 - Memory usage tracking
 - Endpoints de salud personalizados
 
+### ⏰ Gestión de Zona Horaria
+
+- **DateTimeProvider Service** para manejo consistente de fechas
+- Configuración de zona horaria Ecuador (America/Guayaquil, UTC-5)
+- MySQL configurado con timezone local
+- Entity Framework con ValueConverter para DateTime
+- Todas las fechas se almacenan y muestran en hora de Ecuador
+
 ## 🏗️ Arquitectura
 
 ```
@@ -301,15 +309,16 @@ Start-Process .\test-dashboard.html
 
 ```dockerfile
 # Build image
-docker build -t accessibility-users:latest .
+docker build -t msusers-api:latest .
 
 # Run standalone
 docker run -d \
-  --name users-api \
+  --name msusers-api \
   -p 8081:8081 \
-  -e ConnectionStrings__UsersDb="Server=mysql;Database=users_db;..." \
-  -e Jwt__Secret="your-secret-key" \
-  accessibility-users:latest
+  -e ConnectionStrings__Default="server=mysql;database=usersdb;user=msuser;password=UsrApp2025SecurePass;DateTimeKind=Local" \
+  -e JwtSettings__SecretKey="9b3e7ER@S^glvxPWKX8nN?DTqtrd%Yj!oVIfh+BG&piHwZz6ky4Q52MumOFA-Lc0" \
+  -e Gateway__Secret="VGhpc0lzQVNlY3JldEtleUZvckdhdGV3YXkyMDI0" \
+  msusers-api:latest
 ```
 
 ### Docker Compose
@@ -318,36 +327,88 @@ docker run -d \
 version: "3.8"
 
 services:
-  users-api:
-    image: accessibility-users:latest
+  mysql:
+    image: mysql:8.4
+    container_name: msusers-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: aF3MK0ZuWMHHXyX1ZwWjmKoS4baBAUgL
+      MYSQL_DATABASE: usersdb
+      MYSQL_USER: msuser
+      MYSQL_PASSWORD: UsrApp2025SecurePass
+      TZ: America/Guayaquil # Ecuador UTC-5
+    command: --default-time-zone=-05:00
+    ports:
+      - "3307:3306"
+    volumes:
+      - msusers_mysql:/var/lib/mysql
+      - ./init-users-db.sql:/docker-entrypoint-initdb.d/01-init-users.sql:ro
+    networks:
+      - default
+      - accessibility-shared
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-paF3MK0ZuWMHHXyX1ZwWjmKoS4baBAUgL",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: msusers-api:latest
+    container_name: msusers-api
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: "server=mysql;port=3306;database=usersdb;user=msuser;password=UsrApp2025SecurePass;TreatTinyAsBoolean=false;ConvertZeroDateTime=True;DateTimeKind=Local"
+      JwtSettings__SecretKey: 9b3e7ER@S^glvxPWKX8nN?DTqtrd%Yj!oVIfh+BG&piHwZz6ky4Q52MumOFA-Lc0
+      JwtSettings__Issuer: https://accessibility.company.com
+      JwtSettings__Audience: https://accessibility.company.com
+      JwtSettings__ExpiryHours: 24
+      Gateway__Secret: VGhpc0lzQVNlY3JldEtleUZvckdhdGV3YXkyMDI0
     ports:
       - "8081:8081"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__UsersDb=Server=mysql-users;Database=users_db;Uid=root;Pwd=password
-      - Jwt__Secret=your-jwt-secret
-      - Jwt__Issuer=accessibility-platform
-      - Jwt__Audience=accessibility-api
-    depends_on:
-      - mysql-users
+    networks:
+      - default
+      - accessibility-shared
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 30s
-
-  mysql-users:
-    image: mysql:8.0
-    ports:
-      - "3307:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=password
-      - MYSQL_DATABASE=users_db
-    volumes:
-      - mysql-users-data:/var/lib/mysql
-      - ./init-users-db.sql:/docker-entrypoint-initdb.d/init.sql
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.port=8081"
+      - "prometheus.path=/metrics"
+      - "service.name=users-api"
+      - "service.version=1.0"
 
 volumes:
-  mysql-users-data:
+  msusers_mysql:
+
+networks:
+  default:
+    name: accessibility-ms-users_default
+  accessibility-shared:
+    external: true
+    name: accessibility-shared
 ```
+
+**Notas importantes:**
+
+- **Red compartida:** `accessibility-shared` conecta todos los microservicios
+- **Timezone MySQL:** Configurado en `-05:00` (Ecuador)
+- **DateTimeKind=Local:** En ConnectionString para manejo correcto de fechas
+- **Healthchecks:** MySQL espera estar healthy antes de iniciar API
+- **Labels Prometheus:** Para monitoreo y métricas
 
 ## ⚙️ Configuración
 
@@ -359,13 +420,26 @@ ASPNETCORE_ENVIRONMENT=Production|Development
 ASPNETCORE_URLS=http://+:8081
 
 # Base de Datos
-ConnectionStrings__UsersDb=Server=localhost;Database=users_db;Uid=root;Pwd=password
+ConnectionStrings__Default=server=localhost;port=3306;database=usersdb;user=msuser;password=UsrApp2025SecurePass;TreatTinyAsBoolean=false;ConvertZeroDateTime=True;DateTimeKind=Local
+DB_ROOT_PASSWORD=aF3MK0ZuWMHHXyX1ZwWjmKoS4baBAUgL
+DB_NAME=usersdb
+DB_USER=msuser
+DB_PASSWORD=UsrApp2025SecurePass
+DB_PORT=3307
+
+# MySQL Timezone (Ecuador UTC-5)
+TZ=America/Guayaquil
+MYSQL_TIMEZONE=-05:00
 
 # JWT Configuration
-Jwt__Secret=your-super-secret-key-min-32-chars
-Jwt__Issuer=accessibility-platform
-Jwt__Audience=accessibility-api
-Jwt__ExpirationMinutes=60
+JwtSettings__SecretKey=9b3e7ER@S^glvxPWKX8nN?DTqtrd%Yj!oVIfh+BG&piHwZz6ky4Q52MumOFA-Lc0
+JwtSettings__Issuer=https://accessibility.company.com
+JwtSettings__Audience=https://accessibility.company.com
+JwtSettings__ExpiryHours=24
+
+# Gateway Secret (comunicación entre servicios)
+Gateway__Secret=VGhpc0lzQVNlY3JldEtleUZvckdhdGV3YXkyMDI0
+GATEWAY_SECRET=VGhpc0lzQVNlY3JldEtleUZvckdhdGV3YXkyMDI0
 
 # Email Configuration (para reset password)
 Email__SmtpHost=smtp.gmail.com
@@ -377,6 +451,9 @@ Email__SmtpPassword=your-app-password
 DefaultLanguage=es
 SupportedLanguages=es,en,pt
 
+# Docker
+API_HOST_PORT=8081
+
 # Logging
 Serilog__MinimumLevel=Information
 Serilog__WriteTo__Console=true
@@ -385,24 +462,152 @@ Serilog__WriteTo__Console=true
 ### Configuración de Base de Datos
 
 ```sql
--- Crear base de datos
-CREATE DATABASE users_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Crear base de datos con charset UTF-8
+CREATE DATABASE usersdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Ejecutar script de inicialización
 SOURCE init-users-db.sql;
+
+-- Verificar zona horaria (debe mostrar -05:00 para Ecuador)
+SELECT @@global.time_zone, @@session.time_zone;
 ```
 
-## 🛠️ Stack Tecnológico
+### Configuración de Zona Horaria
+
+El microservicio implementa manejo de zona horaria para Ecuador (UTC-5):
+
+**1. MySQL Timezone:**
+
+```yaml
+# docker-compose.yml
+environment:
+  TZ: America/Guayaquil
+command: --default-time-zone=-05:00
+```
+
+**2. ConnectionString con DateTimeKind:**
+
+```bash
+ConnectionStrings__Default="...;DateTimeKind=Local"
+```
+
+**3. DateTimeProvider Service:**
+
+```csharp
+// Servicio personalizado para manejo de fechas en Ecuador
+public class DateTimeProvider : IDateTimeProvider
+{
+    private static readonly TimeZoneInfo EcuadorTimeZone =
+        TimeZoneInfo.FindSystemTimeZoneById("America/Guayaquil");
+
+    public DateTime Now => TimeZoneInfo.ConvertTimeFromUtc(
+        DateTime.UtcNow,
+        EcuadorTimeZone
+    );
+}
+```
+
+**4. Entity Framework ValueConverter:**
+
+```csharp
+// Todas las fechas se convierten automáticamente a Local
+var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
+    v => DateTime.SpecifyKind(v, DateTimeKind.Local),
+    v => DateTime.SpecifyKind(v, DateTimeKind.Local)
+);
+```
+
+**Resultado:** Todas las fechas se guardan y recuperan en hora de Ecuador (UTC-5).
+
+## � Servicios Clave
+
+### DateTimeProvider Service
+
+Servicio personalizado para manejo consistente de zona horaria:
+
+**Ubicación:** `Users.Application/Services/DateTimeProvider.cs`
+
+```csharp
+public interface IDateTimeProvider
+{
+    DateTime Now { get; }
+    DateTime UtcNow { get; }
+}
+
+public class DateTimeProvider : IDateTimeProvider
+{
+    private static readonly TimeZoneInfo EcuadorTimeZone =
+        TimeZoneInfo.FindSystemTimeZoneById("America/Guayaquil");
+
+    public DateTime Now => TimeZoneInfo.ConvertTimeFromUtc(
+        DateTime.UtcNow,
+        EcuadorTimeZone
+    );
+
+    public DateTime UtcNow => DateTime.UtcNow;
+}
+```
+
+**Registro en DI Container:**
+
+```csharp
+// Program.cs
+builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+```
+
+**Uso en servicios:**
+
+```csharp
+public class UserService
+{
+    private readonly IDateTimeProvider _dateTimeProvider;
+
+    public async Task<User> CreateUserAsync(CreateUserDto dto)
+    {
+        var user = new User
+        {
+            Email = dto.Email,
+            CreatedAt = _dateTimeProvider.Now, // Hora de Ecuador
+            UpdatedAt = _dateTimeProvider.Now
+        };
+        // ...
+    }
+}
+```
+
+**Ventajas:**
+
+- ✅ Centralización del manejo de fechas
+- ✅ Consistencia en toda la aplicación
+- ✅ Facilita testing con mocks
+- ✅ Independiente de la configuración del servidor
+- ✅ Compatible con diferentes zonas horarias
+
+## �🛠️ Stack Tecnológico
 
 - **Runtime:** .NET 9.0
 - **Framework:** ASP.NET Core Web API
 - **ORM:** Entity Framework Core 9.0
-- **Database:** MySQL 8.0+
+- **Database:** MySQL 8.4
 - **Authentication:** JWT Bearer
+- **Timezone:** America/Guayaquil (Ecuador UTC-5)
 - **Logging:** Serilog
 - **Testing:** xUnit + Moq + FluentAssertions
 - **Coverage:** Coverlet + ReportGenerator
 - **Container:** Docker + Docker Compose
+- **Networks:** Docker shared network (accessibility-shared)
+
+## 📦 Servicios Relacionados
+
+Este microservicio forma parte del ecosistema de accesibilidad:
+
+- **Gateway (Port 8080):** Enrutamiento, rate limiting, circuit breaker
+- **Analysis Service (Port 5002):** Análisis de accesibilidad WCAG
+- **Reports Service (Port 5003):** Generación de reportes
+- **Middleware (Port 3001):** Orquestación y lógica de negocio
+- **UI (Port 5173):** Interfaz de usuario
+
+**Red compartida:** Todos los servicios se conectan a través de `accessibility-shared` network.
 
 ## 📜 License
 
@@ -446,4 +651,4 @@ Email: fgiocl@outlook.com
 ---
 
 **Author:** Geovanny Camacho (fgiocl@outlook.com)  
-**Last Update:** 06/10/2025
+**Last Update:** 05/11/2025
