@@ -140,56 +140,5 @@ namespace Users.Tests
             var delByUserResp = await client.DeleteAsync($"/api/sessions/by-user/{userId}");
             Assert.True(delByUserResp.StatusCode == HttpStatusCode.OK || delByUserResp.StatusCode == HttpStatusCode.NotFound);
         }
-
-        // ---------- DELETE ALL DATA ----------
-        [Fact]
-        public async Task DeleteAllData_RemovesAllRecords()
-        {
-            var client = _factory.CreateAuthenticatedClient(); // Cliente autenticado
-
-            // Crear algunos datos de prueba con emails únicos
-            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var email1 = $"del1_{timestamp}@test.com";
-            var email2 = $"del2_{timestamp}@test.com";
-            var password = "Test1234"; // Mínimo 8 caracteres según validación FluentValidation
-
-            var dto1 = new { nickname = $"del1_{timestamp}", name = "Delete", lastname = "All1", email = email1, password };
-            var dto2 = new { nickname = $"del2_{timestamp}", name = "Delete", lastname = "All2", email = email2, password };
-
-            // Limpiar datos previos
-            await client.DeleteAsync($"/api/users/by-email/{email1}");
-            await client.DeleteAsync($"/api/users/by-email/{email2}");
-
-            // Crear usuarios con preferencias
-            var createResp1 = await client.PostAsJsonAsync("/api/users-with-preferences", dto1);
-            var createResp2 = await client.PostAsJsonAsync("/api/users-with-preferences", dto2);
-
-            Assert.Equal(HttpStatusCode.Created, createResp1.StatusCode);
-            Assert.Equal(HttpStatusCode.Created, createResp2.StatusCode);
-
-            // Crear sesiones mediante login
-            await client.PostAsJsonAsync("/api/auth/login", new { email = email1, password });
-            await client.PostAsJsonAsync("/api/auth/login", new { email = email2, password });
-
-            // Verificar que existen usuarios antes de eliminar
-            var getUsersBefore = await client.GetAsync("/api/users");
-            Assert.Equal(HttpStatusCode.OK, getUsersBefore.StatusCode);
-
-            // Ejecutar eliminación de todos los datos
-            var deleteAllResp = await client.DeleteAsync("/api/users/all-data");
-            Assert.Equal(HttpStatusCode.OK, deleteAllResp.StatusCode);
-
-            // Verificar que no existen usuarios después de eliminar
-            var getUsersAfter = await client.GetAsync("/api/users");
-            Assert.Equal(HttpStatusCode.OK, getUsersAfter.StatusCode);
-
-            var usersData = await getUsersAfter.Content.ReadFromJsonAsync<JsonElement>();
-            var usersArray = usersData.GetProperty("users");
-            Assert.Equal(0, usersArray.GetArrayLength());
-
-            // Verificar que tampoco existen sesiones
-            var getSessionsAfter = await client.GetAsync("/api/sessions");
-            Assert.Equal(HttpStatusCode.OK, getSessionsAfter.StatusCode);
-        }
     }
 }

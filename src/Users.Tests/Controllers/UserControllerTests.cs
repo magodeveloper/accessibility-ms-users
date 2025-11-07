@@ -411,36 +411,6 @@ namespace Users.Tests.Controllers
             conflictResult.StatusCode.Should().Be(409);
         }
 
-        [Fact]
-        public async Task DeleteAllData_Success_ReturnsOk()
-        {
-            // Arrange
-            _mockUserService.Setup(x => x.DeleteAllDataAsync())
-                           .ReturnsAsync(true);
-
-            // Act
-            var result = await _controller.DeleteAllData();
-
-            // Assert
-            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.StatusCode.Should().Be(200);
-        }
-
-        [Fact]
-        public async Task DeleteAllData_Failure_ReturnsInternalServerError()
-        {
-            // Arrange
-            _mockUserService.Setup(x => x.DeleteAllDataAsync())
-                           .ReturnsAsync(false);
-
-            // Act
-            var result = await _controller.DeleteAllData();
-
-            // Assert
-            var statusCodeResult = result.Should().BeOfType<ObjectResult>().Subject;
-            statusCodeResult.StatusCode.Should().Be(500);
-        }
-
         // ===== Tests de autenticación =====
 
         [Fact]
@@ -489,17 +459,22 @@ namespace Users.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetAll_NotAuthenticated_ReturnsUnauthorized()
+        public async Task GetAll_ReturnsOkWithUsers()
         {
             // Arrange
-            _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
+            var users = new List<Users.Domain.Entities.User>
+            {
+                new Users.Domain.Entities.User { Id = 1, Nickname = "user1", Name = "User", Lastname = "One", Email = "user1@test.com", Role = UserRole.user, Status = UserStatus.active },
+                new Users.Domain.Entities.User { Id = 2, Nickname = "user2", Name = "User", Lastname = "Two", Email = "user2@test.com", Role = UserRole.user, Status = UserStatus.active }
+            };
+            _mockUserService.Setup(x => x.GetAllUsersAsync()).ReturnsAsync(users);
 
             // Act
             var result = await _controller.GetAll();
 
             // Assert
-            var unauthorizedResult = result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
-            unauthorizedResult.StatusCode.Should().Be(401);
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.StatusCode.Should().Be(200);
         }
 
         [Fact]
@@ -527,20 +502,6 @@ namespace Users.Tests.Controllers
 
             // Act
             var result = await _controller.Update(userId, dto);
-
-            // Assert
-            var unauthorizedResult = result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
-            unauthorizedResult.StatusCode.Should().Be(401);
-        }
-
-        [Fact]
-        public async Task DeleteAllData_NotAuthenticated_ReturnsUnauthorized()
-        {
-            // Arrange
-            _mockUserContext.Setup(x => x.IsAuthenticated).Returns(false);
-
-            // Act
-            var result = await _controller.DeleteAllData();
 
             // Assert
             var unauthorizedResult = result.Should().BeOfType<UnauthorizedObjectResult>().Subject;

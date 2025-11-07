@@ -208,42 +208,4 @@ public class UserManagementIntegrationTests : IClassFixture<TestWebApplicationFa
         await client.DeleteAsync($"/api/users/by-email/{user2Email}");
     }
 
-    [Fact]
-    public async Task DeleteAllData_ShouldCleanDatabase()
-    {
-        // Arrange
-        var client = _factory.CreateAuthenticatedClient();
-
-        // Create some test data
-        var userDto1 = new { nickname = "deleteall1", name = "Delete", lastname = "All1", email = "deleteall1@test.com", password = "Password123!" };
-        var userDto2 = new { nickname = "deleteall2", name = "Delete", lastname = "All2", email = "deleteall2@test.com", password = "Password123!" };
-
-        await client.PostAsJsonAsync("/api/users-with-preferences", userDto1);
-        await client.PostAsJsonAsync("/api/users-with-preferences", userDto2);
-
-        // Create sessions by logging in
-        await client.PostAsJsonAsync("/api/auth/login", new { email = "deleteall1@test.com", password = "Password123!" });
-        await client.PostAsJsonAsync("/api/auth/login", new { email = "deleteall2@test.com", password = "Password123!" });
-
-        // Act
-        var deleteAllResponse = await client.DeleteAsync("/api/users/all-data");
-
-        // Assert
-        deleteAllResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        // Verify all data was deleted (puede quedar el usuario de prueba global del factory)
-        var getUsersResponse = await client.GetAsync("/api/users");
-        getUsersResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var usersContent = await getUsersResponse.Content.ReadFromJsonAsync<JsonElement>();
-        usersContent.TryGetProperty("users", out var usersArray).Should().BeTrue();
-        usersArray.GetArrayLength().Should().BeLessThanOrEqualTo(1);
-
-        var getSessionsResponse = await client.GetAsync("/api/sessions");
-        getSessionsResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var sessionsContent = await getSessionsResponse.Content.ReadFromJsonAsync<JsonElement>();
-        sessionsContent.TryGetProperty("sessions", out var sessionsArray).Should().BeTrue();
-        sessionsArray.GetArrayLength().Should().BeLessThanOrEqualTo(1); // Puede quedar la sesión del admin
-    }
 }

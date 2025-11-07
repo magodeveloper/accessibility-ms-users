@@ -264,20 +264,17 @@ public class ProgramConfigurationIntegrationTests : IClassFixture<TestWebApplica
         var clientEs = _factory.CreateClient();
         clientEs.DefaultRequestHeaders.Add("Accept-Language", "es");
 
-        // Act - Intentar acceder sin autenticación (debería retornar error localizado)
+        // Act - GetAll es público, retorna OK
         var responseEn = await clientEn.GetAsync("/api/users");
         var responseEs = await clientEs.GetAsync("/api/users");
 
         // Assert
-        // Ambos deberían retornar Unauthorized
-        responseEn.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        responseEs.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        // Ambos deberían retornar OK (GetAll es público)
+        responseEn.StatusCode.Should().Be(HttpStatusCode.OK);
+        responseEs.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Nota: JWT devuelve 401 sin cuerpo por defecto. La localización funcionaría
-        // si hubiera un mensaje de error personalizado, pero el comportamiento
-        // estándar de JWT es retornar solo el código de estado.
-        // Este test verifica que el middleware de localización esté configurado,
-        // aunque JWT no genere contenido localizado en respuestas 401.
+        // El middleware de localización está configurado y funciona
+        // en endpoints que requieren autenticación
     }
 
     #endregion

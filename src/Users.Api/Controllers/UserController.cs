@@ -169,19 +169,12 @@ namespace Users.Api.Controllers
         /// Lista todos los usuarios.
         /// </summary>
         /// <response code="200">Lista de usuarios</response>
-        /// <response code="401">No autenticado</response>
         [HttpGet("")]
+        [AllowAnonymous] // Endpoint público
         [ProducesResponseType(typeof(object), 200)]
-        [ProducesResponseType(401)]
         public async Task<IActionResult> GetAll()
         {
             var lang = LanguageHelper.GetRequestLanguage(Request);
-
-            // Validar autenticación
-            if (!_userContext.IsAuthenticated)
-            {
-                return Unauthorized(new { error = Localization.Get("Error_NotAuthenticated", lang) });
-            }
 
             var users = await _userService.GetAllUsersAsync();
             var list = users.Select(u => new Users.Application.Dtos.UserReadDto(u.Id, u.Nickname, u.Name, u.Lastname, u.Email, u.Role.ToString(), u.Status.ToString(), u.EmailConfirmed, u.LastLogin, u.RegistrationDate, u.CreatedAt, u.UpdatedAt)).ToList();
@@ -273,37 +266,6 @@ namespace Users.Api.Controllers
 
                 return Conflict(new { error = ex.Message });
             }
-        }
-
-        // DELETE: api/users/all-data
-        /// <summary>
-        /// Elimina TODOS los registros de las tablas USERS, PREFERENCES y SESSIONS.
-        /// CUIDADO: Esta operación es irreversible y eliminará toda la información.
-        /// </summary>
-        /// <response code="200">Todos los datos eliminados exitosamente</response>
-        /// <response code="500">Error al eliminar los datos</response>
-        /// <response code="401">No autenticado</response>
-        [HttpDelete("all-data")]
-        [ProducesResponseType(typeof(object), 200)]
-        [ProducesResponseType(500)]
-        [ProducesResponseType(401)]
-        public async Task<IActionResult> DeleteAllData()
-        {
-            var lang = LanguageHelper.GetRequestLanguage(Request);
-
-            // Validar autenticación
-            if (!_userContext.IsAuthenticated)
-            {
-                return Unauthorized(new { error = Localization.Get("Error_NotAuthenticated", lang) });
-            }
-
-            var deleted = await _userService.DeleteAllDataAsync();
-            if (!deleted)
-            {
-                return StatusCode(500, new { error = Localization.Get("Error_DeleteAllData", lang) });
-            }
-
-            return Ok(new { message = Localization.Get("Success_AllDataDeleted", lang) });
         }
     }
 }
