@@ -794,6 +794,314 @@ namespace Users.Tests.Controllers
 
         #endregion
 
+        #region ChangePassword Tests
+
+        [Fact]
+        public async Task ChangePassword_ValidRequest_ReturnsOk()
+        {
+            // Arrange
+            var email = "test@example.com";
+            var currentPassword = "OldPassword123!";
+            var newPassword = "NewPassword456!";
+            var hashedOldPassword = "hashed-old-password";
+            var hashedNewPassword = "hashed-new-password";
+
+            var user = new User
+            {
+                Id = 1,
+                Email = email,
+                Password = hashedOldPassword,
+                Nickname = "testuser",
+                Name = "Test",
+                Lastname = "User",
+                Role = UserRole.user,
+                Status = UserStatus.active,
+                EmailConfirmed = true,
+                RegistrationDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            // Setup authenticated user context
+            var claims = new List<System.Security.Claims.Claim>
+            {
+                new System.Security.Claims.Claim("email", email),
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, email)
+            };
+            var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
+            var claimsPrincipal = new System.Security.Claims.ClaimsPrincipal(identity);
+
+            _controller.ControllerContext.HttpContext.User = claimsPrincipal;
+
+            var dto = new ChangePasswordDto(currentPassword, newPassword);
+
+            _mockPasswordService.Setup(x => x.Verify(currentPassword, hashedOldPassword))
+                               .Returns(true);
+            _mockPasswordService.Setup(x => x.Verify(newPassword, hashedOldPassword))
+                               .Returns(false);
+            _mockPasswordService.Setup(x => x.Hash(newPassword))
+                               .Returns(hashedNewPassword);
+
+            // Act
+            var result = await _controller.ChangePassword(dto);
+
+            // Assert
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.StatusCode.Should().Be(200);
+
+            var updatedUser = await _context.Users.FindAsync(user.Id);
+            updatedUser!.Password.Should().Be(hashedNewPassword);
+        }
+
+        [Fact]
+        public async Task ChangePassword_WrongCurrentPassword_ReturnsBadRequest()
+        {
+            // Arrange
+            var email = "test@example.com";
+            var currentPassword = "WrongPassword123!";
+            var newPassword = "NewPassword456!";
+            var hashedPassword = "hashed-password";
+
+            var user = new User
+            {
+                Id = 1,
+                Email = email,
+                Password = hashedPassword,
+                Nickname = "testuser",
+                Name = "Test",
+                Lastname = "User",
+                Role = UserRole.user,
+                Status = UserStatus.active,
+                EmailConfirmed = true,
+                RegistrationDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            // Setup authenticated user context
+            var claims = new List<System.Security.Claims.Claim>
+            {
+                new System.Security.Claims.Claim("email", email)
+            };
+            var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
+            var claimsPrincipal = new System.Security.Claims.ClaimsPrincipal(identity);
+
+            _controller.ControllerContext.HttpContext.User = claimsPrincipal;
+
+            var dto = new ChangePasswordDto(currentPassword, newPassword);
+
+            _mockPasswordService.Setup(x => x.Verify(currentPassword, hashedPassword))
+                               .Returns(false); // Wrong password
+
+            // Act
+            var result = await _controller.ChangePassword(dto);
+
+            // Assert
+            result.Should().BeOfType<BadRequestObjectResult>();
+        }
+
+        [Fact]
+        public async Task ChangePassword_NewPasswordSameAsOld_ReturnsBadRequest()
+        {
+            // Arrange
+            var email = "test@example.com";
+            var password = "SamePassword123!";
+            var hashedPassword = "hashed-password";
+
+            var user = new User
+            {
+                Id = 1,
+                Email = email,
+                Password = hashedPassword,
+                Nickname = "testuser",
+                Name = "Test",
+                Lastname = "User",
+                Role = UserRole.user,
+                Status = UserStatus.active,
+                EmailConfirmed = true,
+                RegistrationDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            // Setup authenticated user context
+            var claims = new List<System.Security.Claims.Claim>
+            {
+                new System.Security.Claims.Claim("email", email)
+            };
+            var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
+            var claimsPrincipal = new System.Security.Claims.ClaimsPrincipal(identity);
+
+            _controller.ControllerContext.HttpContext.User = claimsPrincipal;
+
+            var dto = new ChangePasswordDto(password, password);
+
+            _mockPasswordService.Setup(x => x.Verify(password, hashedPassword))
+                               .Returns(true); // Both old and new verify to same hash
+
+            // Act
+            var result = await _controller.ChangePassword(dto);
+
+            // Assert
+            result.Should().BeOfType<BadRequestObjectResult>();
+        }
+
+        [Fact]
+        public async Task ChangePassword_NewPasswordTooShort_ReturnsBadRequest()
+        {
+            // Arrange
+            var email = "test@example.com";
+            var currentPassword = "OldPassword123!";
+            var newPassword = "123"; // Too short
+            var hashedPassword = "hashed-password";
+
+            var user = new User
+            {
+                Id = 1,
+                Email = email,
+                Password = hashedPassword,
+                Nickname = "testuser",
+                Name = "Test",
+                Lastname = "User",
+                Role = UserRole.user,
+                Status = UserStatus.active,
+                EmailConfirmed = true,
+                RegistrationDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            // Setup authenticated user context
+            var claims = new List<System.Security.Claims.Claim>
+            {
+                new System.Security.Claims.Claim("email", email)
+            };
+            var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
+            var claimsPrincipal = new System.Security.Claims.ClaimsPrincipal(identity);
+
+            _controller.ControllerContext.HttpContext.User = claimsPrincipal;
+
+            var dto = new ChangePasswordDto(currentPassword, newPassword);
+
+            _mockPasswordService.Setup(x => x.Verify(currentPassword, hashedPassword))
+                               .Returns(true);
+            _mockPasswordService.Setup(x => x.Verify(newPassword, hashedPassword))
+                               .Returns(false);
+
+            // Act
+            var result = await _controller.ChangePassword(dto);
+
+            // Assert
+            result.Should().BeOfType<BadRequestObjectResult>();
+        }
+
+        [Fact]
+        public async Task ChangePassword_NoAuthenticatedUser_ReturnsUnauthorized()
+        {
+            // Arrange
+            var dto = new ChangePasswordDto("OldPassword123!", "NewPassword456!");
+
+            // No authenticated user context (no claims)
+            var identity = new System.Security.Claims.ClaimsIdentity(); // Empty identity
+            var claimsPrincipal = new System.Security.Claims.ClaimsPrincipal(identity);
+
+            _controller.ControllerContext.HttpContext.User = claimsPrincipal;
+
+            // Act
+            var result = await _controller.ChangePassword(dto);
+
+            // Assert
+            result.Should().BeOfType<UnauthorizedObjectResult>();
+        }
+
+        [Fact]
+        public async Task ChangePassword_UserNotFound_ReturnsNotFound()
+        {
+            // Arrange
+            var email = "nonexistent@example.com";
+            var dto = new ChangePasswordDto("OldPassword123!", "NewPassword456!");
+
+            // Setup authenticated user context with non-existent user
+            var claims = new List<System.Security.Claims.Claim>
+            {
+                new System.Security.Claims.Claim("email", email)
+            };
+            var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
+            var claimsPrincipal = new System.Security.Claims.ClaimsPrincipal(identity);
+
+            _controller.ControllerContext.HttpContext.User = claimsPrincipal;
+
+            // Act
+            var result = await _controller.ChangePassword(dto);
+
+            // Assert
+            result.Should().BeOfType<NotFoundObjectResult>();
+        }
+
+        [Fact]
+        public async Task ChangePassword_EmptyNewPassword_ReturnsBadRequest()
+        {
+            // Arrange
+            var email = "test@example.com";
+            var currentPassword = "OldPassword123!";
+            var newPassword = ""; // Empty
+            var hashedPassword = "hashed-password";
+
+            var user = new User
+            {
+                Id = 1,
+                Email = email,
+                Password = hashedPassword,
+                Nickname = "testuser",
+                Name = "Test",
+                Lastname = "User",
+                Role = UserRole.user,
+                Status = UserStatus.active,
+                EmailConfirmed = true,
+                RegistrationDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            // Setup authenticated user context
+            var claims = new List<System.Security.Claims.Claim>
+            {
+                new System.Security.Claims.Claim("email", email)
+            };
+            var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
+            var claimsPrincipal = new System.Security.Claims.ClaimsPrincipal(identity);
+
+            _controller.ControllerContext.HttpContext.User = claimsPrincipal;
+
+            var dto = new ChangePasswordDto(currentPassword, newPassword);
+
+            _mockPasswordService.Setup(x => x.Verify(currentPassword, hashedPassword))
+                               .Returns(true);
+
+            // Act
+            var result = await _controller.ChangePassword(dto);
+
+            // Assert
+            result.Should().BeOfType<BadRequestObjectResult>();
+        }
+
+        #endregion
+
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)

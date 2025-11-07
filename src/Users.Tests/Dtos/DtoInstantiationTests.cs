@@ -60,22 +60,23 @@ namespace Users.Tests.Dtos
         }
 
         [Fact]
-        public void ResetPasswordRequestDto_CanBeInstantiated()
+        public void ResetPasswordDto_CanBeInstantiated()
         {
             // Arrange & Act
-            var dto = new ResetPasswordRequestDto("test@example.com");
+            var dto = new ResetPasswordDto("test@example.com", "NewPassword123!");
 
             // Assert
             Assert.NotNull(dto);
             Assert.Equal("test@example.com", dto.Email);
+            Assert.Equal("NewPassword123!", dto.NewPassword);
         }
 
         [Fact]
-        public void ResetPasswordRequestDto_CanBeInstantiatedWithDifferentEmails()
+        public void ResetPasswordDto_CanBeInstantiatedWithDifferentEmails()
         {
             // Arrange & Act
-            var dto1 = new ResetPasswordRequestDto("user1@domain.com");
-            var dto2 = new ResetPasswordRequestDto("user2@anotherdomain.org");
+            var dto1 = new ResetPasswordDto("user1@domain.com", "Pass1!");
+            var dto2 = new ResetPasswordDto("user2@anotherdomain.org", "Pass2!");
 
             // Assert
             Assert.NotNull(dto1);

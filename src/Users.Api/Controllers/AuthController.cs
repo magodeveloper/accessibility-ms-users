@@ -13,7 +13,6 @@ namespace Users.Api.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous] // Auth controller es público (login, registro, etc.)
     public class AuthController : ControllerBase
     {
         private readonly UsersDbContext _db;
@@ -43,6 +42,7 @@ namespace Users.Api.Controllers
         /// <response code="401">Credenciales inválidas</response>
         /// <response code="403">Usuario inactivo o prohibido</response>
         [HttpPost("login")]
+        [AllowAnonymous] // Endpoint público
         [ProducesResponseType(typeof(LoginResponseDto), 200)]
         [ProducesResponseType(401)]
         [ProducesResponseType(403)]
@@ -141,6 +141,7 @@ namespace Users.Api.Controllers
         /// <response code="400">Datos inválidos o email ya existe</response>
         /// <response code="409">Email ya registrado</response>
         [HttpPost("register")]
+        [AllowAnonymous] // Endpoint público
         [ProducesResponseType(typeof(UserWithPreferenceReadDto), 201)]
         [ProducesResponseType(400)]
         [ProducesResponseType(409)]
@@ -244,9 +245,12 @@ namespace Users.Api.Controllers
         /// Cierra sesión (logout global). Elimina todas las sesiones del usuario y pone last_login en null.
         /// </summary>
         /// <response code="200">Logout exitoso</response>
+        /// <response code="401">No autenticado</response>
         /// <response code="404">Usuario no encontrado</response>
         [HttpPost("logout")]
+        [Authorize] // Requiere autenticación
         [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(401)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Logout([FromBody] LogoutDto dto)
         {
@@ -269,6 +273,7 @@ namespace Users.Api.Controllers
         /// <response code="200">Contraseña reseteada</response>
         /// <response code="404">Usuario no encontrado</response>
         [HttpPost("reset-password")]
+        [AllowAnonymous] // Endpoint público - En producción debería requerir token de email
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
@@ -286,11 +291,71 @@ namespace Users.Api.Controllers
         }
 
         /// <summary>
+        /// Cambia la contraseña del usuario autenticado. Requiere contraseña actual.
+        /// </summary>
+        /// <response code="200">Contraseña cambiada exitosamente</response>
+        /// <response code="400">Contraseña actual incorrecta o validación fallida</response>
+        /// <response code="401">No autenticado</response>
+        /// <response code="404">Usuario no encontrado</response>
+        [HttpPost("change-password")]
+        [Authorize] // Requiere autenticación JWT
+        [ProducesResponseType(typeof(object), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            var lang = LanguageHelper.GetRequestLanguage(Request);
+
+            // Obtener email del token JWT del usuario autenticado
+            var authenticatedEmail = User.FindFirst("email")?.Value
+                ?? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+
+            if (string.IsNullOrEmpty(authenticatedEmail))
+            {
+                return Unauthorized(new { error = Localization.Get("Error_InvalidToken", lang) });
+            }
+
+            var user = await _db.Users.FirstOrDefaultAsync(x => x.Email == authenticatedEmail);
+            if (user is null)
+            {
+                return NotFound(new { error = Localization.Get("Error_UserNotFound", lang) });
+            }
+
+            // Validar contraseña actual
+            if (!_passwordService.Verify(dto.CurrentPassword, user.Password))
+            {
+                return BadRequest(new { error = Localization.Get("Error_CurrentPasswordIncorrect", lang) });
+            }
+
+            // Validar que la nueva contraseña sea diferente
+            if (_passwordService.Verify(dto.NewPassword, user.Password))
+            {
+                return BadRequest(new { error = Localization.Get("Error_NewPasswordSameAsOld", lang) });
+            }
+
+            // Validar fortaleza de password
+            if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
+            {
+                return BadRequest(new { error = Localization.Get("Error_PasswordTooShort", lang) });
+            }
+
+            // Actualizar contraseña
+            user.Password = _passwordService.Hash(dto.NewPassword);
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new { message = Localization.Get("Success_PasswordChanged", lang) });
+        }
+
+        /// <summary>
         /// Confirma el email del usuario.
         /// </summary>
         /// <response code="200">Email confirmado</response>
         /// <response code="404">Usuario no encontrado</response>
         [HttpPost("confirm-email/{userId:int}")]
+        [AllowAnonymous] // Endpoint público - se usa desde link en email
         [ProducesResponseType(typeof(object), 200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> ConfirmEmail(int userId)

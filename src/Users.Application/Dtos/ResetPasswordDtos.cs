@@ -1,5 +1,8 @@
 namespace Users.Application.Dtos
 {
-    public record ResetPasswordRequestDto(string Email);
+    // Resetear contraseña (público - sin token por simplicidad)
     public record ResetPasswordDto(string Email, string NewPassword);
+
+    // Cambiar contraseña estando autenticado
+    public record ChangePasswordDto(string CurrentPassword, string NewPassword);
 }
