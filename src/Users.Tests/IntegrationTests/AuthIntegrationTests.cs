@@ -2,6 +2,7 @@ using Xunit;
 using System.Net;
 using System.Text.Json;
 using FluentAssertions;
+using Users.Tests.Helpers;
 using System.Net.Http.Json;
 using Users.Tests.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -126,7 +127,8 @@ public class AuthIntegrationTests : IClassFixture<TestWebApplicationFactory<User
         userElement.TryGetProperty("lastLogin", out var lastLoginElement).Should().BeTrue();
 
         var lastLogin = lastLoginElement.GetDateTime();
-        lastLogin.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        // Comparar con hora de Ecuador (UTC-5)
+        lastLogin.Should().BeCloseTo(DateTimeHelper.EcuadorNow, TimeSpan.FromMinutes(1));
 
         // Cleanup
         await client.DeleteAsync($"/api/users/by-email/{email}");

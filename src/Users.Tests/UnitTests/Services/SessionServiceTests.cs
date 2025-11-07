@@ -1,5 +1,6 @@
 using Xunit;
 using FluentAssertions;
+using Users.Tests.Helpers;
 using Users.Domain.Entities;
 using Users.Application.Dtos;
 using Users.Infrastructure.Data;

@@ -42,7 +42,8 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
-      ConnectionStrings__Default: "server=mysql;port=3306;database=${DB_NAME:-usersdb};user=${DB_USER:-msuser};password=${DB_PASSWORD:-UsrApp2025SecurePass};TreatTinyAsBoolean=false;ConvertZeroDateTime=True;DateTimeKind=Local"
+      TZ: America/Guayaquil # Zona horaria de Ecuador (UTC-5)
+      ConnectionStrings__Default: "server=mysql;port=3306;database=${DB_NAME:-usersdb};user=${DB_USER:-msuser};password=${DB_PASSWORD:-UsrApp2025SecurePass};TreatTinyAsBoolean=false;ConvertZeroDateTime=True"
       JwtSettings__SecretKey: ${JwtSettings__SecretKey:-9b3e7ER@S^glvxPWKX8nN?DTqtrd%Yj!oVIfh+BG&piHwZz6ky4Q52MumOFA-Lc0}
       JwtSettings__Issuer: ${JwtSettings__Issuer:-https://accessibility.company.com}
       JwtSettings__Audience: ${JwtSettings__Audience:-https://accessibility.company.com}

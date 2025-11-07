@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Users.Tests.Helpers;
 using Users.Domain.Entities;
 
 namespace Users.Tests.Domain;
@@ -9,6 +10,7 @@ public class DomainEntitiesTests
     public void User_Properties_SetAndGet_ShouldWork()
     {
         // Arrange & Act
+        var now = DateTimeHelper.EcuadorNow;
         var user = new User
         {
             Id = 1,
@@ -20,10 +22,10 @@ public class DomainEntitiesTests
             Role = UserRole.admin,
             Status = UserStatus.active,
             EmailConfirmed = true,
-            LastLogin = DateTime.UtcNow,
-            RegistrationDate = DateTime.UtcNow.AddDays(-30),
-            CreatedAt = DateTime.UtcNow.AddDays(-30),
-            UpdatedAt = DateTime.UtcNow
+            LastLogin = now,
+            RegistrationDate = now.AddDays(-30),
+            CreatedAt = now.AddDays(-30),
+            UpdatedAt = now
         };
 
         // Assert
@@ -37,9 +39,10 @@ public class DomainEntitiesTests
         user.Status.Should().Be(UserStatus.active);
         user.EmailConfirmed.Should().BeTrue();
         user.LastLogin.Should().NotBeNull();
-        user.RegistrationDate.Should().BeBefore(DateTime.UtcNow);
-        user.CreatedAt.Should().BeBefore(DateTime.UtcNow);
-        user.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        user.RegistrationDate.Should().BeBefore(DateTimeHelper.EcuadorNow);
+        user.CreatedAt.Should().BeBefore(DateTimeHelper.EcuadorNow);
+        // Comparar con hora de Ecuador (UTC-5)
+        user.UpdatedAt.Should().BeCloseTo(DateTimeHelper.EcuadorNow, TimeSpan.FromMinutes(1));
     }
 
     [Fact]
@@ -77,6 +80,7 @@ public class DomainEntitiesTests
     public void Preference_Properties_SetAndGet_ShouldWork()
     {
         // Arrange & Act
+        var now = DateTimeHelper.EcuadorNow;
         var preference = new Preference
         {
             Id = 1,
@@ -89,8 +93,8 @@ public class DomainEntitiesTests
             NotificationsEnabled = false,
             AiResponseLevel = AiResponseLevel.detailed,
             FontSize = 16,
-            CreatedAt = DateTime.UtcNow.AddDays(-1),
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = now.AddDays(-1),
+            UpdatedAt = now
         };
 
         // Assert
@@ -104,8 +108,9 @@ public class DomainEntitiesTests
         preference.NotificationsEnabled.Should().BeFalse();
         preference.AiResponseLevel.Should().Be(AiResponseLevel.detailed);
         preference.FontSize.Should().Be(16);
-        preference.CreatedAt.Should().BeBefore(DateTime.UtcNow);
-        preference.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        preference.CreatedAt.Should().BeBefore(DateTimeHelper.EcuadorNow);
+        // Comparar con hora de Ecuador (UTC-5)
+        preference.UpdatedAt.Should().BeCloseTo(DateTimeHelper.EcuadorNow, TimeSpan.FromMinutes(1));
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using Xunit;
 using FluentAssertions;
+using Users.Tests.Helpers;
 using Users.Domain.Entities;
 using Users.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -69,8 +70,8 @@ public class PreferenceServiceTests : IDisposable
         result.NotificationsEnabled.Should().BeTrue();
         result.AiResponseLevel.Should().Be(AiResponseLevel.detailed);
         result.FontSize.Should().Be(14);
-        result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-        result.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        result.CreatedAt.Should().BeCloseTo(DateTimeHelper.EcuadorNow, TimeSpan.FromSeconds(5));
+        result.UpdatedAt.Should().BeCloseTo(DateTimeHelper.EcuadorNow, TimeSpan.FromSeconds(5));
 
         // Verify it was saved to database
         var savedPreference = await _context.Preferences.FindAsync(result.Id);
@@ -107,8 +108,8 @@ public class PreferenceServiceTests : IDisposable
             NotificationsEnabled = false,
             AiResponseLevel = AiResponseLevel.basic,
             FontSize = 12,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTimeHelper.EcuadorNow,
+            UpdatedAt = DateTimeHelper.EcuadorNow
         };
         await _context.Preferences.AddAsync(existingPreference);
         await _context.SaveChangesAsync();
@@ -162,8 +163,8 @@ public class PreferenceServiceTests : IDisposable
             NotificationsEnabled = true,
             AiResponseLevel = AiResponseLevel.detailed,
             FontSize = 14,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeHelper.EcuadorNow,
+            UpdatedAt = DateTimeHelper.EcuadorNow,
             User = user
         };
         await _context.Preferences.AddAsync(preference);
@@ -240,8 +241,8 @@ public class PreferenceServiceTests : IDisposable
             NotificationsEnabled = true,
             AiResponseLevel = AiResponseLevel.detailed,
             FontSize = 14,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeHelper.EcuadorNow,
+            UpdatedAt = DateTimeHelper.EcuadorNow,
             User = user1
         };
 
@@ -257,8 +258,8 @@ public class PreferenceServiceTests : IDisposable
             NotificationsEnabled = false,
             AiResponseLevel = AiResponseLevel.basic,
             FontSize = 12,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeHelper.EcuadorNow,
+            UpdatedAt = DateTimeHelper.EcuadorNow,
             User = user2
         };
 
@@ -313,6 +314,8 @@ public class PreferenceServiceTests : IDisposable
         };
         await _context.Users.AddAsync(user);
 
+        // La fecha será convertida a Ecuador time por el interceptor
+        var originalDateUtc = DateTime.UtcNow.AddDays(-1);
         var originalPreference = new Preference
         {
             Id = 1,
@@ -325,8 +328,8 @@ public class PreferenceServiceTests : IDisposable
             NotificationsEnabled = false,
             AiResponseLevel = AiResponseLevel.basic,
             FontSize = 12,
-            CreatedAt = DateTime.UtcNow.AddDays(-1),
-            UpdatedAt = DateTime.UtcNow.AddDays(-1),
+            CreatedAt = originalDateUtc,
+            UpdatedAt = originalDateUtc,
             User = user
         };
         await _context.Preferences.AddAsync(originalPreference);
@@ -360,8 +363,8 @@ public class PreferenceServiceTests : IDisposable
         result.NotificationsEnabled.Should().BeTrue();
         result.AiResponseLevel.Should().Be(AiResponseLevel.detailed);
         result.FontSize.Should().Be(16);
-        result.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-        result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow.AddDays(-1), TimeSpan.FromSeconds(5));
+        result.UpdatedAt.Should().BeCloseTo(DateTimeHelper.EcuadorNow, TimeSpan.FromSeconds(5));
+        result.CreatedAt.Should().Be(originalPreference.CreatedAt); // Debe ser la misma fecha que al crear
 
         // Verify it was updated in database
         var savedPreference = await _context.Preferences.FindAsync(1);
@@ -424,8 +427,8 @@ public class PreferenceServiceTests : IDisposable
             NotificationsEnabled = true,
             AiResponseLevel = AiResponseLevel.detailed,
             FontSize = 14,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeHelper.EcuadorNow,
+            UpdatedAt = DateTimeHelper.EcuadorNow,
             User = user
         };
         await _context.Preferences.AddAsync(preference);
@@ -469,7 +472,8 @@ public class PreferenceServiceTests : IDisposable
         };
         await _context.Users.AddAsync(user);
 
-        var originalDate = DateTime.UtcNow.AddDays(-1);
+        // La fecha será convertida a Ecuador time por el interceptor
+        var originalDateUtc = DateTime.UtcNow.AddDays(-1);
         var originalPreference = new Preference
         {
             Id = 1,
@@ -482,8 +486,8 @@ public class PreferenceServiceTests : IDisposable
             NotificationsEnabled = false,
             AiResponseLevel = AiResponseLevel.basic,
             FontSize = 12,
-            CreatedAt = originalDate,
-            UpdatedAt = originalDate,
+            CreatedAt = originalDateUtc,
+            UpdatedAt = originalDateUtc,
             User = user
         };
         await _context.Preferences.AddAsync(originalPreference);
@@ -515,8 +519,8 @@ public class PreferenceServiceTests : IDisposable
         result.NotificationsEnabled.Should().BeFalse(); // Unchanged
         result.AiResponseLevel.Should().Be(AiResponseLevel.detailed); // Changed
         result.FontSize.Should().Be(12); // Unchanged
-        result.CreatedAt.Should().BeCloseTo(originalDate, TimeSpan.FromSeconds(1)); // Should not change
-        result.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5)); // Should be updated
+        result.CreatedAt.Should().Be(originalPreference.CreatedAt); // Should not change
+        result.UpdatedAt.Should().BeCloseTo(DateTimeHelper.EcuadorNow, TimeSpan.FromSeconds(5)); // Should be updated
     }
     protected virtual void Dispose(bool disposing)
     {
@@ -536,3 +540,5 @@ public class PreferenceServiceTests : IDisposable
         GC.SuppressFinalize(this);
     }
 }
+
+

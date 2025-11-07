@@ -2,6 +2,7 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 using Users.Application;
+using Users.Tests.Helpers;
 using Users.Domain.Entities;
 using Users.Application.Services;
 using Users.Infrastructure.Data;
@@ -58,9 +59,10 @@ public class UserServiceTests : IDisposable
         result.Role.Should().Be(UserRole.user);
         result.Status.Should().Be(UserStatus.active);
         result.EmailConfirmed.Should().BeFalse();
-        result.RegistrationDate.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        result.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+        // Comparar con hora de Ecuador (UTC-5)
+        result.RegistrationDate.Should().BeCloseTo(DateTimeHelper.EcuadorNow, TimeSpan.FromSeconds(1));
+        result.CreatedAt.Should().BeCloseTo(DateTimeHelper.EcuadorNow, TimeSpan.FromSeconds(1));
+        result.UpdatedAt.Should().BeCloseTo(DateTimeHelper.EcuadorNow, TimeSpan.FromSeconds(1));
 
         _passwordServiceMock.Verify(x => x.Hash("password123"), Times.Once);
     }
@@ -340,7 +342,7 @@ public class UserServiceTests : IDisposable
         result.Role.Should().Be(UserRole.admin);
         result.Status.Should().Be(UserStatus.inactive);
         result.EmailConfirmed.Should().BeTrue();
-        result.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+        result.UpdatedAt.Should().BeCloseTo(DateTimeHelper.EcuadorNow, TimeSpan.FromSeconds(1));
 
         _passwordServiceMock.Verify(x => x.Hash("newpassword"), Times.Once);
     }

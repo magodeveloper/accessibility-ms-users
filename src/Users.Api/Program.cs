@@ -97,6 +97,13 @@ builder.Services.AddSwaggerGen(options =>
 
 // Controllers
 builder.Services.AddControllers() // Controladores
+    .AddJsonOptions(options =>
+    {
+        // Configurar serialización de DateTime con zona horaria local
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        // No configurar DateTimeZoneHandling aquí, ya que queremos que Entity Framework 
+        // maneje las fechas según DateTimeKind=Local en la connection string
+    })
     .AddDataAnnotationsLocalization() // Localización de anotaciones de datos
     .AddViewLocalization(); // Localización de vistas
 

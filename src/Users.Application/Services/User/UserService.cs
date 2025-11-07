@@ -52,6 +52,7 @@ namespace Users.Application.Services.User
             user.Role = Users.Domain.Entities.UserRole.user;
             user.Status = Users.Domain.Entities.UserStatus.active;
             user.EmailConfirmed = false;
+            // El interceptor en DbContext convertirá UTC a Ecuador time (-5 horas)
             var now = DateTime.UtcNow;
             user.RegistrationDate = now;
             user.CreatedAt = now;
@@ -114,6 +115,7 @@ namespace Users.Application.Services.User
             u.Role = user.Role;
             u.Status = user.Status;
             u.EmailConfirmed = user.EmailConfirmed;
+            // El interceptor en DbContext convertirá UTC a Ecuador time (-5 horas)
             u.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return u;
@@ -160,6 +162,7 @@ namespace Users.Application.Services.User
                 u.EmailConfirmed = dto.EmailConfirmed.Value;
             }
 
+            // El interceptor en DbContext convertirá UTC a Ecuador time (-5 horas)
             u.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return u;

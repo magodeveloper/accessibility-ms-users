@@ -1,5 +1,6 @@
 using Users.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Users.Infrastructure.Data;
@@ -12,26 +13,57 @@ public sealed class UsersDbContext : DbContext
     public DbSet<Session> Sessions { get; set; }
     public DbSet<Preference> Preferences { get; set; }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public override int SaveChanges()
     {
-        // Convertidor de DateTime para forzar DateTimeKind.Local
-        var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
-            v => DateTime.SpecifyKind(v, DateTimeKind.Local),
-            v => DateTime.SpecifyKind(v, DateTimeKind.Local)
-        );
+        ConvertUtcToEcuadorTime();
+        return base.SaveChanges();
+    }
 
-        // Aplicar el convertidor a todas las propiedades DateTime
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        ConvertUtcToEcuadorTime();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void ConvertUtcToEcuadorTime()
+    {
+        var entries = ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
+
+        foreach (var entry in entries)
         {
-            foreach (var property in entityType.GetProperties())
+            foreach (var property in entry.Properties)
             {
-                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
-                {
-                    property.SetValueConverter(dateTimeConverter);
-                }
+                ConvertPropertyToEcuadorTime(property);
             }
         }
+    }
 
+    private static void ConvertPropertyToEcuadorTime(PropertyEntry property)
+    {
+        // Propiedades que NO deben convertirse (son tiempos futuros absolutos)
+        var excludedProperties = new[] { "ExpiresAt" };
+
+        if (excludedProperties.Contains(property.Metadata.Name))
+        {
+            return;
+        }
+        if ((property.Metadata.ClrType == typeof(DateTime) ||
+             property.Metadata.ClrType == typeof(DateTime?)) &&
+            property.CurrentValue != null)
+        {
+            var dateTime = (DateTime)property.CurrentValue;
+            // Si es UTC, restar 5 horas para Ecuador
+            if (dateTime.Kind == DateTimeKind.Utc || dateTime.Kind == DateTimeKind.Local)
+            {
+                var ecuadorTime = dateTime.ToUniversalTime().AddHours(-5);
+                property.CurrentValue = DateTime.SpecifyKind(ecuadorTime, DateTimeKind.Unspecified);
+            }
+        }
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
         // USERS
         modelBuilder.Entity<User>(e =>
         {
