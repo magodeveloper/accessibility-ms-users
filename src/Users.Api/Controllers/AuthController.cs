@@ -135,6 +135,112 @@ namespace Users.Api.Controllers
         }
 
         /// <summary>
+        /// Registra un nuevo usuario en el sistema. Endpoint público para auto-registro.
+        /// </summary>
+        /// <response code="201">Usuario creado exitosamente</response>
+        /// <response code="400">Datos inválidos o email ya existe</response>
+        /// <response code="409">Email ya registrado</response>
+        [HttpPost("register")]
+        [ProducesResponseType(typeof(UserWithPreferenceReadDto), 201)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(409)]
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        {
+            var lang = LanguageHelper.GetRequestLanguage(Request);
+
+            // Validar que el email no exista
+            var existingUser = await _db.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == dto.Email.ToLower());
+
+            if (existingUser != null)
+            {
+                return Conflict(new { error = Localization.Get("Error_EmailAlreadyExists", lang) });
+            }
+
+            // Validar fortaleza de password (mínimo 6 caracteres)
+            if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Length < 6)
+            {
+                return BadRequest(new { error = Localization.Get("Error_PasswordTooShort", lang) });
+            }
+
+            // Crear nuevo usuario con valores por defecto seguros
+            var newUser = new Users.Domain.Entities.User
+            {
+                Nickname = dto.Nickname ?? dto.Email.Split('@')[0],
+                Name = dto.Name,
+                Lastname = dto.Lastname,
+                Email = dto.Email.ToLower(),
+                Password = _passwordService.Hash(dto.Password),
+                Role = UserRole.user, // Por defecto usuario regular (no admin)
+                Status = UserStatus.active,
+                EmailConfirmed = false, // Requiere confirmación
+                RegistrationDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _db.Users.Add(newUser);
+
+            // Crear preferencias por defecto
+            var defaultPreference = new Users.Domain.Entities.Preference
+            {
+                User = newUser,
+                WcagVersion = "2.2",
+                WcagLevel = WcagLevel.AA,
+                Language = Language.es,
+                VisualTheme = VisualTheme.light,
+                ReportFormat = ReportFormat.pdf,
+                NotificationsEnabled = true,
+                AiResponseLevel = AiResponseLevel.detailed,
+                FontSize = 16,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _db.Preferences.Add(defaultPreference);
+
+            await _db.SaveChangesAsync();
+
+            // Recargar para obtener IDs generados
+            await _db.Entry(newUser).ReloadAsync();
+            await _db.Entry(defaultPreference).ReloadAsync();
+
+            // Retornar usuario creado sin password
+            var prefDto = new PreferenceReadDto(
+                defaultPreference.Id,
+                newUser.Id,
+                defaultPreference.WcagVersion,
+                defaultPreference.WcagLevel.ToString(),
+                defaultPreference.Language.ToString(),
+                defaultPreference.VisualTheme.ToString(),
+                defaultPreference.ReportFormat.ToString(),
+                defaultPreference.NotificationsEnabled,
+                defaultPreference.AiResponseLevel?.ToString(),
+                defaultPreference.FontSize,
+                defaultPreference.CreatedAt,
+                defaultPreference.UpdatedAt
+            );
+
+            var userDto = new UserWithPreferenceReadDto(
+                newUser.Id,
+                newUser.Nickname,
+                newUser.Name,
+                newUser.Lastname,
+                newUser.Email,
+                newUser.Role.ToString(),
+                newUser.Status.ToString(),
+                newUser.EmailConfirmed,
+                newUser.LastLogin,
+                newUser.RegistrationDate,
+                newUser.CreatedAt,
+                newUser.UpdatedAt,
+                prefDto
+            );
+
+            return CreatedAtAction(nameof(Register), new { id = newUser.Id }, userDto);
+        }
+
+        /// <summary>
         /// Cierra sesión (logout global). Elimina todas las sesiones del usuario y pone last_login en null.
         /// </summary>
         /// <response code="200">Logout exitoso</response>
