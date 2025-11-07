@@ -193,8 +193,9 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
         );
 
         // Act
+        var encodedEmail = Uri.EscapeDataString(email);
         var response = await clientAuth.PatchAsync(
-            $"/api/users-with-preferences/by-email/{email}",
+            $"/api/users-with-preferences/by-email/{encodedEmail}",
             JsonContent.Create(patchDto));
 
         // Assert
@@ -237,8 +238,9 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
         );
 
         // Act
+        var encodedEmail = Uri.EscapeDataString(email);
         var response = await clientAuth.PatchAsync(
-            $"/api/users-with-preferences/by-email/{email}",
+            $"/api/users-with-preferences/by-email/{encodedEmail}",
             JsonContent.Create(patchDto));
 
         // Assert
@@ -287,8 +289,9 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
         );
 
         // Act
+        var encodedEmail = Uri.EscapeDataString(email);
         var response = await clientAuth.PatchAsync(
-            $"/api/users-with-preferences/by-email/{email}",
+            $"/api/users-with-preferences/by-email/{encodedEmail}",
             JsonContent.Create(patchDto));
 
         // Assert
@@ -332,8 +335,9 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
         );
 
         // Act
+        var encodedEmail = Uri.EscapeDataString(email);
         var response = await clientAuth.PatchAsync(
-            $"/api/users-with-preferences/by-email/{email}",
+            $"/api/users-with-preferences/by-email/{encodedEmail}",
             JsonContent.Create(patchDto));
 
         // Assert
@@ -376,8 +380,9 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
         );
 
         // Act
+        var encodedEmail = Uri.EscapeDataString(email);
         var response = await clientAuth.PatchAsync(
-            $"/api/users-with-preferences/by-email/{email}",
+            $"/api/users-with-preferences/by-email/{encodedEmail}",
             JsonContent.Create(patchDto));
 
         // Assert
@@ -420,8 +425,9 @@ public class UsersWithPreferencesIntegrationTests : IClassFixture<TestWebApplica
         );
 
         // Act
+        var encodedEmail = Uri.EscapeDataString(email);
         var response = await clientAuth.PatchAsync(
-            $"/api/users-with-preferences/by-email/{email}",
+            $"/api/users-with-preferences/by-email/{encodedEmail}",
             JsonContent.Create(patchDto));
 
         // Assert
