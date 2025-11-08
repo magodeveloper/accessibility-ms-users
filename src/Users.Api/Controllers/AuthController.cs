@@ -200,7 +200,34 @@ namespace Users.Api.Controllers
 
             _db.Preferences.Add(defaultPreference);
 
-            await _db.SaveChangesAsync();
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is MySqlConnector.MySqlException mysqlEx)
+            {
+                // Manejar errores de duplicados de MySQL
+                if (mysqlEx.ErrorCode == MySqlConnector.MySqlErrorCode.DuplicateKeyEntry)
+                {
+                    // Determinar qué campo causó el duplicado
+                    var errorMessage = mysqlEx.Message;
+
+                    if (errorMessage.Contains("IX_users_email") || errorMessage.Contains("email"))
+                    {
+                        return Conflict(new { error = Localization.Get("Error_EmailAlreadyExists", lang) });
+                    }
+                    else if (errorMessage.Contains("IX_users_nickname") || errorMessage.Contains("nickname"))
+                    {
+                        return Conflict(new { error = Localization.Get("Error_NicknameExists", lang) });
+                    }
+
+                    // Error genérico de duplicado
+                    return Conflict(new { error = Localization.Get("Error_InvalidData", lang) });
+                }
+
+                // Re-lanzar si no es un error de duplicado
+                throw;
+            }
 
             // Recargar para obtener IDs generados
             await _db.Entry(newUser).ReloadAsync();
