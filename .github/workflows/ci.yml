@@ -55,7 +55,7 @@ jobs:
       - name: Run tests with coverage
         run: dotnet test src/Users.Tests/Users.Tests.csproj --no-build --configuration Release --collect:"XPlat Code Coverage"
       - name: Report coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./src/Users.Tests/TestResults/**/*.cobertura.xml
           fail_ci_if_error: true
