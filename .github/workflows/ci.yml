@@ -117,7 +117,7 @@ jobs:
           fi
       - name: Upload smoke logs if failed
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ms-users-smoke-logs
           path: smoke.log
